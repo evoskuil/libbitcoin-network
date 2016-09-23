@@ -23,7 +23,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/protocols/protocol_timer.hpp>
 
 namespace libbitcoin {
@@ -35,7 +35,8 @@ namespace network {
 using namespace bc::message;
 using namespace std::placeholders;
 
-protocol_ping_31402::protocol_ping_31402(p2p& network, channel::ptr channel)
+protocol_ping_31402::protocol_ping_31402(network_interface& network,
+    channel::ptr channel)
   : protocol_timer(network, channel, true, NAME),
     settings_(network.network_settings()),
     CONSTRUCT_TRACK(protocol_ping_31402)

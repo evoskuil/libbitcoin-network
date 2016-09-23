@@ -27,7 +27,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/protocols/protocol_timer.hpp>
 #include <bitcoin/network/settings.hpp>
 
@@ -52,7 +52,7 @@ static uint64_t time_stamp()
 // Require the configured minimum and services by default.
 // Configured min version is our own but we may require higer for some stuff.
 // Configured services are our own and may not always make sense to require.
-protocol_version_31402::protocol_version_31402(p2p& network,
+protocol_version_31402::protocol_version_31402(network_interface& network,
     channel::ptr channel)
   : protocol_version_31402(network, channel,
         network.network_settings().protocol_maximum,
@@ -62,7 +62,7 @@ protocol_version_31402::protocol_version_31402(p2p& network,
 {
 }
 
-protocol_version_31402::protocol_version_31402(p2p& network,
+protocol_version_31402::protocol_version_31402(network_interface& network,
     channel::ptr channel, uint32_t own_version, uint64_t own_services,
     uint32_t minimum_version, uint64_t minimum_services)
   : protocol_timer(network, channel, false, NAME),

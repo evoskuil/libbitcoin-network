@@ -27,13 +27,14 @@
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/connector.hpp>
 #include <bitcoin/network/define.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/sessions/session.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 /// Intermediate base class for adding batch connect sequence.
 class BCT_API session_batch
@@ -42,7 +43,7 @@ class BCT_API session_batch
 protected:
 
     /// Construct an instance.
-    session_batch(p2p& network, bool notify_on_connect);
+    session_batch(network_interface& network, bool notify_on_connect);
 
     /// Create a channel from the configured number of concurrent attempts.
     virtual void connect(connector::ptr connect, channel_handler handler);

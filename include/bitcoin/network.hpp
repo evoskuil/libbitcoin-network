@@ -25,7 +25,8 @@
 #include <bitcoin/network/locked_socket.hpp>
 #include <bitcoin/network/logging.hpp>
 #include <bitcoin/network/message_subscriber.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
+#include <bitcoin/network/p2p_network.hpp>
 #include <bitcoin/network/pending_channels.hpp>
 #include <bitcoin/network/pending_sockets.hpp>
 #include <bitcoin/network/proxy.hpp>

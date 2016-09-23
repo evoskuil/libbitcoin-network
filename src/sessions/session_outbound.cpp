@@ -22,7 +22,7 @@
 #include <cstddef>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/protocols/protocol_address_31402.hpp>
 #include <bitcoin/network/protocols/protocol_ping_31402.hpp>
 #include <bitcoin/network/protocols/protocol_ping_60001.hpp>
@@ -34,7 +34,8 @@ namespace network {
 
 using namespace std::placeholders;
 
-session_outbound::session_outbound(p2p& network, bool notify_on_connect)
+session_outbound::session_outbound(network_interface& network,
+    bool notify_on_connect)
   : session_batch(network, notify_on_connect),
     CONSTRUCT_TRACK(session_outbound)
 {

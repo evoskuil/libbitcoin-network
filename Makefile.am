@@ -44,7 +44,7 @@ src_libbitcoin_network_la_SOURCES = \
     src/locked_socket.cpp \
     src/logging.cpp \
     src/message_subscriber.cpp \
-    src/p2p.cpp \
+    src/p2p_network.cpp \
     src/pending_channels.cpp \
     src/pending_sockets.cpp \
     src/proxy.cpp \
@@ -77,7 +77,7 @@ test_libbitcoin_network_test_CPPFLAGS = -I${srcdir}/include ${bitcoin_CPPFLAGS}
 test_libbitcoin_network_test_LDADD = src/libbitcoin-network.la ${boost_unit_test_framework_LIBS} ${bitcoin_LIBS}
 test_libbitcoin_network_test_SOURCES = \
     test/main.cpp \
-    test/p2p.cpp
+    test/p2p_network.cpp
 
 endif WITH_TESTS
 
@@ -99,7 +99,8 @@ include_bitcoin_network_HEADERS = \
     include/bitcoin/network/locked_socket.hpp \
     include/bitcoin/network/logging.hpp \
     include/bitcoin/network/message_subscriber.hpp \
-    include/bitcoin/network/p2p.hpp \
+    include/bitcoin/network/network_interface.hpp \
+    include/bitcoin/network/p2p_network.hpp \
     include/bitcoin/network/pending_channels.hpp \
     include/bitcoin/network/pending_sockets.hpp \
     include/bitcoin/network/proxy.hpp \

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/p2p_network.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -45,11 +45,11 @@
 namespace libbitcoin {
 namespace network {
 
-#define NAME "p2p"
+#define NAME "p2p_network"
 
 using namespace std::placeholders;
 
-p2p::p2p(const settings& settings)
+p2p_network::p2p_network(const settings& settings)
   : settings_(settings),
     stopped_(true),
     top_height_(0),
@@ -61,15 +61,15 @@ p2p::p2p(const settings& settings)
 }
 
 // This allows for shutdown based on destruct without need to call stop.
-p2p::~p2p()
+p2p_network::~p2p_network()
 {
-    p2p::close();
+    p2p_network::close();
 }
 
 // Start sequence.
 // ----------------------------------------------------------------------------
 
-void p2p::start(result_handler handler)
+void p2p_network::start(result_handler handler)
 {
     if (!stopped())
     {
@@ -90,11 +90,11 @@ void p2p::start(result_handler handler)
 
     // This is invoked on a new thread.
     manual->start(
-        std::bind(&p2p::handle_manual_started,
+        std::bind(&p2p_network::handle_manual_started,
             this, _1, handler));
 }
 
-void p2p::handle_manual_started(const code& ec, result_handler handler)
+void p2p_network::handle_manual_started(const code& ec, result_handler handler)
 {
     if (stopped())
     {
@@ -113,7 +113,7 @@ void p2p::handle_manual_started(const code& ec, result_handler handler)
     handle_hosts_loaded(hosts_->start(), handler);
 }
 
-void p2p::handle_hosts_loaded(const code& ec, result_handler handler)
+void p2p_network::handle_hosts_loaded(const code& ec, result_handler handler)
 {
     if (stopped())
     {
@@ -134,11 +134,11 @@ void p2p::handle_hosts_loaded(const code& ec, result_handler handler)
 
     // This is invoked on a new thread.
     seed->start(
-        std::bind(&p2p::handle_started,
+        std::bind(&p2p_network::handle_started,
             this, _1, handler));
 }
 
-void p2p::handle_started(const code& ec, result_handler handler)
+void p2p_network::handle_started(const code& ec, result_handler handler)
 {
     if (stopped())
     {
@@ -166,7 +166,7 @@ void p2p::handle_started(const code& ec, result_handler handler)
 // Run sequence.
 // ----------------------------------------------------------------------------
 
-void p2p::run(result_handler handler)
+void p2p_network::run(result_handler handler)
 {
     // Start node.peer persistent connections.
     for (const auto& peer: settings_.peers)
@@ -177,11 +177,11 @@ void p2p::run(result_handler handler)
 
     // This is invoked on a new thread.
     inbound->start(
-        std::bind(&p2p::handle_inbound_started,
+        std::bind(&p2p_network::handle_inbound_started,
             this, _1, handler));
 }
 
-void p2p::handle_inbound_started(const code& ec, result_handler handler)
+void p2p_network::handle_inbound_started(const code& ec, result_handler handler)
 {
     if (ec)
     {
@@ -196,11 +196,11 @@ void p2p::handle_inbound_started(const code& ec, result_handler handler)
 
     // This is invoked on a new thread.
     outbound->start(
-        std::bind(&p2p::handle_running,
+        std::bind(&p2p_network::handle_running,
             this, _1, handler));
 }
 
-void p2p::handle_running(const code& ec, result_handler handler)
+void p2p_network::handle_running(const code& ec, result_handler handler)
 {
     if (ec)
     {
@@ -216,24 +216,24 @@ void p2p::handle_running(const code& ec, result_handler handler)
 
 // Specializations.
 // ----------------------------------------------------------------------------
-// Create derived sessions and override these to inject from derived p2p class.
+// Create derived sessions and override to inject from derived p2p classes.
 
-session_seed::ptr p2p::attach_seed_session()
+session_seed::ptr p2p_network::attach_seed_session()
 {
     return attach<session_seed>();
 }
 
-session_manual::ptr p2p::attach_manual_session()
+session_manual::ptr p2p_network::attach_manual_session()
 {
     return attach<session_manual>(true);
 }
 
-session_inbound::ptr p2p::attach_inbound_session()
+session_inbound::ptr p2p_network::attach_inbound_session()
 {
     return attach<session_inbound>(true);
 }
 
-session_outbound::ptr p2p::attach_outbound_session()
+session_outbound::ptr p2p_network::attach_outbound_session()
 {
     return attach<session_outbound>(true);
 }
@@ -247,7 +247,7 @@ session_outbound::ptr p2p::attach_outbound_session()
 // completes at least once before returning. This requires a unique lock be 
 // taken around the entire section, which poses a deadlock risk. Instead this
 // is thread safe and idempotent, allowing it to be unguarded.
-bool p2p::stop()
+bool p2p_network::stop()
 {
     // This is the only stop operation that can fail.
     const auto result = (hosts_->stop() == error::success);
@@ -273,10 +273,10 @@ bool p2p::stop()
 }
 
 // This must be called from the thread that constructed this class (see join).
-bool p2p::close()
+bool p2p_network::close()
 {
     // Signal current work to stop and threadpool to stop accepting new work.
-    const auto result = p2p::stop();
+    const auto result = p2p_network::stop();
 
     // Block on join of all threads in the threadpool.
     threadpool_.join();
@@ -286,29 +286,29 @@ bool p2p::close()
 // Properties.
 // ----------------------------------------------------------------------------
 
-const settings& p2p::network_settings() const
+const settings& p2p_network::network_settings() const
 {
     return settings_;
 }
 
 // The blockchain height is set in our version message for handshake.
-size_t p2p::top_height() const
+size_t p2p_network::top_height() const
 {
     return top_height_.load();
 }
 
 // The height is set externally and is safe as an atomic.
-void p2p::set_top_height(size_t value)
+void p2p_network::set_top_height(size_t value)
 {
     top_height_.store(value);
 }
 
-bool p2p::stopped() const
+bool p2p_network::stopped() const
 {
     return stopped_.load();
 }
 
-threadpool& p2p::thread_pool()
+threadpool& p2p_network::thread_pool()
 {
     return threadpool_;
 }
@@ -316,12 +316,12 @@ threadpool& p2p::thread_pool()
 // Subscriptions.
 // ----------------------------------------------------------------------------
 
-void p2p::subscribe_connection(connect_handler handler)
+void p2p_network::subscribe_connection(connect_handler handler)
 {
     channel_subscriber_->subscribe(handler, error::service_stopped, nullptr);
 }
 
-void p2p::subscribe_stop(result_handler handler)
+void p2p_network::subscribe_stop(result_handler handler)
 {
     stop_subscriber_->subscribe(handler, error::service_stopped);
 }
@@ -329,12 +329,12 @@ void p2p::subscribe_stop(result_handler handler)
 // Manual connections.
 // ----------------------------------------------------------------------------
 
-void p2p::connect(const config::endpoint& peer)
+void p2p_network::connect(const config::endpoint& peer)
 {
     connect(peer.host(), peer.port());
 }
 
-void p2p::connect(const std::string& hostname, uint16_t port)
+void p2p_network::connect(const std::string& hostname, uint16_t port)
 {
     if (stopped())
         return;
@@ -344,7 +344,7 @@ void p2p::connect(const std::string& hostname, uint16_t port)
         manual->connect(hostname, port);
 }
 
-void p2p::connect(const std::string& hostname, uint16_t port,
+void p2p_network::connect(const std::string& hostname, uint16_t port,
     channel_handler handler)
 {
     if (stopped())
@@ -364,17 +364,17 @@ void p2p::connect(const std::string& hostname, uint16_t port,
 // Pending connections collection.
 // ----------------------------------------------------------------------------
 
-void p2p::pend(channel::ptr channel, result_handler handler)
+void p2p_network::pend(channel::ptr channel, result_handler handler)
 {
     pending_.store(channel, handler);
 }
 
-void p2p::unpend(channel::ptr channel, result_handler handler)
+void p2p_network::unpend(channel::ptr channel, result_handler handler)
 {
     pending_.remove(channel, handler);
 }
 
-void p2p::pending(uint64_t version_nonce, truth_handler handler) const
+void p2p_network::pending(uint64_t version_nonce, truth_handler handler) const
 {
     pending_.exists(version_nonce, handler);
 }
@@ -382,21 +382,22 @@ void p2p::pending(uint64_t version_nonce, truth_handler handler) const
 // Connections collection.
 // ----------------------------------------------------------------------------
 
-void p2p::connected(const address& address, truth_handler handler) const
+void p2p_network::connected(const address& address,
+    truth_handler handler) const
 {
     connections_->exists(address, handler);
 }
 
-void p2p::store(channel::ptr channel, result_handler handler)
+void p2p_network::store(channel::ptr channel, result_handler handler)
 {
     const auto new_connection_handler =
-        std::bind(&p2p::handle_new_connection,
+        std::bind(&p2p_network::handle_new_connection,
             this, _1, channel, handler);
 
     connections_->store(channel, new_connection_handler);
 }
 
-void p2p::handle_new_connection(const code& ec, channel::ptr channel,
+void p2p_network::handle_new_connection(const code& ec, channel::ptr channel,
     result_handler handler)
 {
     // Connection-in-use indicated here by error::address_in_use.
@@ -406,12 +407,12 @@ void p2p::handle_new_connection(const code& ec, channel::ptr channel,
         channel_subscriber_->relay(error::success, channel);
 }
 
-void p2p::remove(channel::ptr channel, result_handler handler)
+void p2p_network::remove(channel::ptr channel, result_handler handler)
 {
     connections_->remove(channel, handler);
 }
 
-void p2p::connected_count(count_handler handler) const
+void p2p_network::connected_count(count_handler handler) const
 {
     connections_->count(handler);
 }
@@ -419,29 +420,29 @@ void p2p::connected_count(count_handler handler) const
 // Hosts collection.
 // ----------------------------------------------------------------------------
 
-void p2p::fetch_address(address_handler handler) const
+void p2p_network::fetch_address(address_handler handler) const
 {
     address out;
     handler(hosts_->fetch(out), out);
 }
 
-void p2p::store(const address& address, result_handler handler)
+void p2p_network::store(const address& address, result_handler handler)
 {
     handler(hosts_->store(address));
 }
 
-void p2p::store(const address::list& addresses, result_handler handler)
+void p2p_network::store(const address::list& addresses, result_handler handler)
 {
     // Store is invoked on a new thread.
     hosts_->store(addresses, handler);
 }
 
-void p2p::remove(const address& address, result_handler handler)
+void p2p_network::remove(const address& address, result_handler handler)
 {
     handler(hosts_->remove(address));
 }
 
-void p2p::address_count(count_handler handler) const
+void p2p_network::address_count(count_handler handler) const
 {
     handler(hosts_->count());
 }

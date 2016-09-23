@@ -27,6 +27,7 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
+#include <bitcoin/network/network_interface.hpp>
 
 namespace libbitcoin {
 namespace network {
@@ -45,7 +46,7 @@ namespace network {
 #define BOUND_PROTOCOL_TYPE(handler, args) \
     std::bind(PROTOCOL_ARGS_TYPE(handler, args))
 
-class p2p;
+class p2p_network;
 
 /// Virtual base class for protocol implementation, mostly thread safe.
 class BCT_API protocol
@@ -57,7 +58,8 @@ protected:
     typedef std::function<void(const code&, size_t)> count_handler;
 
     /// Construct an instance.
-    protocol(p2p& network, channel::ptr channel, const std::string& name);
+    protocol(network_interface& network, channel::ptr channel,
+        const std::string& name);
 
     /// This class is not copyable.
     protocol(const protocol&) = delete;

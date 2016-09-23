@@ -26,11 +26,12 @@
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/protocols/protocol_timer.hpp>
 #include <bitcoin/network/settings.hpp>
+#include <bitcoin/network/network_interface.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 /**
  * Ping-pong protocol.
@@ -47,7 +48,7 @@ public:
      * @param[in]  network   The network interface.
      * @param[in]  channel   The channel on which to start the protocol.
      */
-    protocol_ping_31402(p2p& network, channel::ptr channel);
+    protocol_ping_31402(network_interface& network, channel::ptr channel);
 
     /**
      * Start the protocol.

@@ -22,14 +22,14 @@
 #include <cstdint>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/network/channel.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/protocols/protocol_version_31402.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-protocol_version_70002::protocol_version_70002(p2p& network,
+protocol_version_70002::protocol_version_70002(network_interface& network,
     channel::ptr channel)
   : protocol_version_70002(network, channel,
         network.network_settings().protocol_maximum,
@@ -40,7 +40,7 @@ protocol_version_70002::protocol_version_70002(p2p& network,
 {
 }
 
-protocol_version_70002::protocol_version_70002(p2p& network,
+protocol_version_70002::protocol_version_70002(network_interface& network,
     channel::ptr channel, uint32_t own_version, uint64_t own_services,
     uint32_t minimum_version, uint64_t minimum_services, bool relay)
   : protocol_version_31402(network, channel, own_version, own_services,

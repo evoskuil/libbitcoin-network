@@ -26,13 +26,14 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/sessions/session.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 /// Seed connections session, thread safe.
 class BCT_API session_seed
@@ -42,7 +43,7 @@ public:
     typedef std::shared_ptr<session_seed> ptr;
 
     /// Construct an instance.
-    session_seed(p2p& network);
+    session_seed(network_interface& network);
 
     /// Start the session.
     void start(result_handler handler) override;

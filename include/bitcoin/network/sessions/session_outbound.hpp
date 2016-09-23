@@ -25,13 +25,14 @@
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/sessions/session_batch.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 /// Outbound connections session, thread safe.
 class BCT_API session_outbound
@@ -41,7 +42,7 @@ public:
     typedef std::shared_ptr<session_outbound> ptr;
 
     /// Construct an instance.
-    session_outbound(p2p& network, bool notify_on_connect);
+    session_outbound(network_interface& network, bool notify_on_connect);
 
     /// Start the session.
     void start(result_handler handler) override;

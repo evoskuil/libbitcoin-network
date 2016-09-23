@@ -27,12 +27,13 @@
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/protocols/protocol_timer.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 class BCT_API protocol_version_31402
   : public protocol_timer, track<protocol_version_31402>
@@ -45,7 +46,7 @@ public:
      * @param[in]  network   The network interface.
      * @param[in]  channel   The channel for the protocol.
      */
-    protocol_version_31402(p2p& network, channel::ptr channel);
+    protocol_version_31402(network_interface& network, channel::ptr channel);
 
     /**
      * Construct a version protocol instance.
@@ -56,7 +57,7 @@ public:
      * @param[in]  minimum_version   This required minimum version.
      * @param[in]  minimum_services  This required minimum services.
      */
-    protocol_version_31402(p2p& network, channel::ptr channel,
+    protocol_version_31402(network_interface& network, channel::ptr channel,
         uint32_t own_version, uint64_t own_services, uint32_t minimum_version,
         uint64_t minimum_services);
     
@@ -76,7 +77,7 @@ protected:
         version_const_ptr version);
     virtual bool handle_receive_verack(const code& ec, verack_const_ptr);
 
-    p2p& network_;
+    network_interface& network_;
     const uint32_t own_version_;
     const uint64_t own_services_;
     const uint32_t minimum_version_;

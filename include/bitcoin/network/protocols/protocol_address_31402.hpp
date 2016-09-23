@@ -25,11 +25,12 @@
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/protocols/protocol_events.hpp>
+#include <bitcoin/network/network_interface.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 /**
  * Address protocol.
@@ -46,7 +47,7 @@ public:
      * @param[in]  network   The network interface.
      * @param[in]  channel   The channel on which to start the protocol.
      */
-    protocol_address_31402(p2p& network, channel::ptr channel);
+    protocol_address_31402(network_interface& network, channel::ptr channel);
 
     /**
      * Start the protocol.
@@ -62,7 +63,7 @@ protected:
     virtual bool handle_receive_get_address(const code& ec,
         get_address_const_ptr message);
 
-    p2p& network_;
+    network_interface& network_;
     const message::address self_;
 };
 

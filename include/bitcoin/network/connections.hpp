@@ -57,7 +57,7 @@ public:
 
     /// Send a message to all channels, with completion handlers.
     /// Complete always returns success, use channel handler for failure codes.
-    template <typename Message>
+    template <class Message>
     void broadcast(const Message& message, channel_handler handle_channel,
         result_handler handle_complete)
     {

@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <functional>
 #include <bitcoin/bitcoin.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/protocols/protocol_ping_31402.hpp>
 #include <bitcoin/network/protocols/protocol_ping_60001.hpp>
 #include <bitcoin/network/protocols/protocol_seed_31402.hpp>
@@ -38,7 +38,7 @@ namespace network {
 #define NAME "session_seed"
 
 using namespace std::placeholders;
-session_seed::session_seed(p2p& network)
+session_seed::session_seed(network_interface& network)
   : session(network, false),
     CONSTRUCT_TRACK(session_seed)
 {

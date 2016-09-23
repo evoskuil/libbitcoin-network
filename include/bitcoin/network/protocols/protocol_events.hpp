@@ -25,11 +25,12 @@
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/protocols/protocol.hpp>
+#include <bitcoin/network/network_interface.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 /**
  * Base class for stateful protocol implementation, thread and lock safe.
@@ -45,7 +46,7 @@ protected:
      * @param[in]  channel   The channel on which to start the protocol.
      * @param[in]  name      The instance name for logging purposes.
      */
-    protocol_events(p2p& network, channel::ptr channel,
+    protocol_events(network_interface& network, channel::ptr channel,
         const std::string& name);
 
     /**

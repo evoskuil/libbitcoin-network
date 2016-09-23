@@ -24,7 +24,7 @@
 #include <memory>
 #include <bitcoin/bitcoin.hpp>
 #include <bitcoin/network/connector.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
 
 namespace libbitcoin {
 namespace network {
@@ -35,7 +35,7 @@ namespace network {
 using namespace bc::config;
 using namespace std::placeholders;
 
-session_batch::session_batch(p2p& network, bool notify_on_connect)
+session_batch::session_batch(network_interface& network, bool notify_on_connect)
   : session(network, notify_on_connect),
     batch_size_(std::max(settings_.connect_batch_size, 1u))
 {

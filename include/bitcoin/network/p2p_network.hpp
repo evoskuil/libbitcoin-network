@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_NETWORK_P2P_HPP
-#define LIBBITCOIN_NETWORK_P2P_HPP
+#ifndef LIBBITCOIN_NETWORK_P2P_NETWORK_HPP
+#define LIBBITCOIN_NETWORK_P2P_NETWORK_HPP
 
 #include <atomic>
 #include <cstddef>
@@ -34,6 +34,7 @@
 #include <bitcoin/network/hosts.hpp>
 #include <bitcoin/network/message_subscriber.hpp>
 #include <bitcoin/network/pending_channels.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/sessions/session_inbound.hpp>
 #include <bitcoin/network/sessions/session_manual.hpp>
 #include <bitcoin/network/sessions/session_outbound.hpp>
@@ -44,19 +45,11 @@ namespace libbitcoin {
 namespace network {
 
 /// Top level public networking interface, partly thread safe.
-class BCT_API p2p
-  : public enable_shared_from_base<p2p>
+class BCT_API p2p_network
+  : public network_interface, enable_shared_from_base<p2p_network>
 {
 public:
-    typedef std::shared_ptr<p2p> ptr;
-    typedef message::network_address address;
-    typedef std::function<void()> stop_handler;
-    typedef std::function<void(bool)> truth_handler;
-    typedef std::function<void(size_t)> count_handler;
-    typedef std::function<void(const code&)> result_handler;
-    typedef std::function<void(const code&, const address&)> address_handler;
-    typedef std::function<void(const code&, channel::ptr)> channel_handler;
-    typedef std::function<bool(const code&, channel::ptr)> connect_handler;
+    typedef std::shared_ptr<p2p_network> ptr;
     typedef subscriber<const code&> stop_subscriber;
     typedef resubscriber<const code&, channel::ptr> channel_subscriber;
 
@@ -65,8 +58,8 @@ public:
 
     /// Send message to all connections.
     template <typename Message>
-    void broadcast(Message&& message, channel_handler handle_channel,
-        result_handler handle_complete)
+    void broadcast(const typename Message& message,
+        channel_handler handle_channel, result_handler handle_complete)
     {
         connections_->broadcast(message, handle_channel, handle_complete);
     }
@@ -83,14 +76,14 @@ public:
     // ------------------------------------------------------------------------
 
     /// Construct an instance.
-    p2p(const settings& settings);
+    p2p_network(const settings& settings);
 
     /// This class is not copyable.
-    p2p(const p2p&) = delete;
-    void operator=(const p2p&) = delete;
+    p2p_network(const p2p_network&) = delete;
+    void operator=(const p2p_network&) = delete;
 
     /// Ensure all threads are coalesced.
-    virtual ~p2p();
+    virtual ~p2p_network();
 
     // Start/Run sequences.
     // ------------------------------------------------------------------------

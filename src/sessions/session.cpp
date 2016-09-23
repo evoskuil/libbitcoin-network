@@ -28,7 +28,7 @@
 #include <bitcoin/network/acceptor.hpp>
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/connector.hpp>
-#include <bitcoin/network/p2p.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/proxy.hpp>
 #include <bitcoin/network/protocols/protocol_version_31402.hpp>
 #include <bitcoin/network/protocols/protocol_version_70002.hpp>
@@ -53,7 +53,7 @@ namespace network {
 
 using namespace std::placeholders;
 
-session::session(p2p& network, bool notify_on_connect)
+session::session(network_interface& network, bool notify_on_connect)
   : stopped_(true),
     notify_on_connect_(notify_on_connect),
     network_(network),

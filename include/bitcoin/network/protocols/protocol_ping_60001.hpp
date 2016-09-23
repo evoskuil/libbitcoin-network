@@ -27,6 +27,7 @@
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/protocols/protocol_ping_31402.hpp>
 #include <bitcoin/network/protocols/protocol_timer.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
@@ -49,7 +50,7 @@ public:
      * @param[in]  network   The network interface.
      * @param[in]  channel   The channel on which to start the protocol.
      */
-    protocol_ping_60001(p2p& network, channel::ptr channel);
+    protocol_ping_60001(network_interface& network, channel::ptr channel);
 
 protected:
     void send_ping(const code& ec) override;

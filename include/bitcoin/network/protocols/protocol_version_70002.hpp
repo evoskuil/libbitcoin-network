@@ -27,12 +27,13 @@
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/protocols/protocol_version_31402.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 class BCT_API protocol_version_70002
   : public protocol_version_31402, track<protocol_version_70002>
@@ -45,7 +46,7 @@ public:
      * @param[in]  network   The network interface.
      * @param[in]  channel   The channel on which to start the protocol.
      */
-    protocol_version_70002(p2p& network, channel::ptr channel);
+    protocol_version_70002(network_interface& network, channel::ptr channel);
 
     /**
      * Construct a version protocol instance.
@@ -57,7 +58,7 @@ public:
      * @param[in]  minimum_services  This required minimum services.
      * @param[in]  relay             The peer should relay transactions.
      */
-    protocol_version_70002(p2p& network, channel::ptr channel,
+    protocol_version_70002(network_interface& network, channel::ptr channel,
         uint32_t own_version, uint64_t own_services, uint32_t minimum_version,
         uint64_t minimum_services, bool relay);
 

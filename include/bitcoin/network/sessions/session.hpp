@@ -31,6 +31,7 @@
 #include <bitcoin/network/connector.hpp>
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/proxy.hpp>
+#include <bitcoin/network/network_interface.hpp>
 #include <bitcoin/network/settings.hpp>
 
 namespace libbitcoin {
@@ -68,7 +69,7 @@ namespace network {
 #define BOUND_SESSION_TYPE(handler, args) \
     std::bind(SESSION_ARGS_TYPE(handler, args))
 
-class p2p;
+class p2p_network;
 
 /// Base class for maintaining the lifetime of a channel set, thread safe.
 class BCT_API session
@@ -92,7 +93,7 @@ public:
 protected:
 
     /// Construct an instance.
-    session(p2p& network, bool notify_on_connect);
+    session(network_interface& network, bool notify_on_connect);
 
     /// Validate session stopped.
     ~session();
@@ -201,7 +202,7 @@ private:
     // These are thread safe.
     std::atomic<bool> stopped_;
     const bool notify_on_connect_;
-    p2p& network_;
+    network_interface& network_;
     mutable dispatcher dispatch_;
 };
 

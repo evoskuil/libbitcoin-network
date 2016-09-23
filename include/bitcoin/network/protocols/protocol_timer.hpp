@@ -25,11 +25,12 @@
 #include <bitcoin/network/channel.hpp>
 #include <bitcoin/network/define.hpp>
 #include <bitcoin/network/protocols/protocol_events.hpp>
+#include <bitcoin/network/network_interface.hpp>
 
 namespace libbitcoin {
 namespace network {
 
-class p2p;
+class p2p_network;
 
 /**
  * Base class for timed protocol implementation.
@@ -46,7 +47,7 @@ protected:
      * @param[in]  perpetual  Set for automatic timer reset unless stopped.
      * @param[in]  name       The instance name for logging purposes.
      */
-    protocol_timer(p2p& network, channel::ptr channel, bool perpetual,
+    protocol_timer(network_interface& network, channel::ptr channel, bool perpetual,
         const std::string& name);
 
     /**
