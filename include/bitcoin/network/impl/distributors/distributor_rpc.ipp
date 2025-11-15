@@ -28,34 +28,12 @@
 namespace libbitcoin {
 namespace network {
 
-template <size_t Size>
-using to_sequence = std::make_index_sequence<Size>;
-
-// make_dispatchers
+// make_notifiers
 // ----------------------------------------------------------------------------
 
 TEMPLATE
-inline bool CLASS::has_params(const optional_t& parameters) NOEXCEPT
-{
-    if (!parameters.has_value())
-        return false;
-
-    return std::visit(overload
-    {
-        [](const rpc::array_t& param) NOEXCEPT
-        {
-            return !param.empty();
-        },
-        [](const rpc::object_t& param) NOEXCEPT
-        {
-            return !param.empty();
-        }
-    }, parameters.value());
-}
-
-TEMPLATE
 template <typename Type>
-inline Type CLASS::extract(const rpc::value_t& value) THROWS
+inline Type CLASS::get(const rpc::value_t& value) THROWS
 {
     using namespace rpc;
     if constexpr (is_same_type<Type, boolean_t>)
@@ -73,83 +51,210 @@ inline Type CLASS::extract(const rpc::value_t& value) THROWS
     if constexpr (is_same_type<Type, object_t>)
         return std::get<object_t>(value.value());
 
-    throw std::invalid_argument{ "type" };
+    throw std::invalid_argument{ "null value" };
+}
+
+TEMPLATE
+template <typename Argument>
+inline rpc::outer<Argument> CLASS::get_value(const rpc::value_t& value) THROWS
+{
+    if constexpr (rpc::is_nullable<Argument>::value)
+    {
+        return { get<rpc::inner<Argument>>(value) };
+    }
+    else
+    {
+        return get<rpc::inner<Argument>>(value);
+    }
+}
+
+TEMPLATE
+template <typename Argument>
+inline rpc::value<Argument> CLASS::get_positional(size_t& position,
+    const rpc::array_t& array) THROWS
+{
+    using namespace rpc;
+    if (position >= array.size())
+    {
+        if constexpr (is_required<Argument>::value)
+            throw std::invalid_argument{ "missing positional" };
+
+        if constexpr (is_optional<Argument>::value)
+            return Argument::value;
+        else
+            return std::optional<typename Argument::type>{};
+    }
+
+    const auto& value = array.at(position++);
+    if (std::holds_alternative<null_t>(value.value()))
+    {
+        if constexpr (is_required<Argument>::value)
+            throw std::invalid_argument{ "null required positional" };
+
+        if constexpr (is_optional<Argument>::value)
+            return Argument::value;
+        else
+            return std::optional<typename Argument::type>{};
+    }
+
+    return get_value<Argument>(value);
+}
+
+TEMPLATE
+template <typename Argument>
+inline rpc::value<Argument> CLASS::get_named(
+    const std::string_view& name, const rpc::object_t& object) THROWS
+{
+    using namespace rpc;
+    const auto it = object.find(std::string{ name });
+    if (it == object.end())
+    {
+        if constexpr (is_required<Argument>::value)
+            throw std::invalid_argument{ "missing named" };
+
+        if constexpr (is_optional<Argument>::value)
+            return Argument::value;
+        else
+            return std::optional<typename Argument::type>{};
+    }
+
+    const auto& value = it->second;
+    if (std::holds_alternative<null_t>(value.value()))
+    {
+        if constexpr (is_required<Argument>::value)
+            throw std::invalid_argument{ "null required named" };
+
+        if constexpr (is_optional<Argument>::value)
+            return Argument::value;
+        else
+            return std::optional<typename Argument::type>{};
+    }
+
+    return get_value<Argument>(value);
 }
 
 TEMPLATE
 template <typename Arguments>
-inline Arguments CLASS::extractor(const optional_t& parameters,
+inline Arguments CLASS::extract_positional(const optional_t& parameters) THROWS
+{
+    using namespace rpc;
+
+    array_t array{};
+    if (parameters.has_value())
+    {
+        const auto& params = parameters.value();
+        if (!std::holds_alternative<array_t>(params))
+            throw std::invalid_argument{ "missing array" };
+
+        array = std::get<array_t>(params);
+    }
+
+    size_t position{};
+    constexpr auto count = std::tuple_size_v<Arguments>;
+    const auto values = [&]<size_t... Index>(sequence<Index...>)
+    {
+        return std::make_tuple
+        (
+            get_positional<std::tuple_element_t<Index, Arguments>>(
+                position, array)...
+        );
+    }(sequence<count>{});
+
+    if (position < array.size())
+        throw std::invalid_argument{ "extra positional" };
+
+    return values;
+}
+
+TEMPLATE
+template <typename Arguments>
+inline Arguments CLASS::extract_named(const optional_t& parameters,
+    const rpc::names_t<Arguments>& names) THROWS
+{
+    using namespace rpc;
+
+    object_t object{};
+    if (parameters.has_value())
+    {
+        const auto& params = parameters.value();
+        if (!std::holds_alternative<object_t>(params))
+            throw std::invalid_argument{ "missing object" };
+
+        object = std::get<object_t>(params);
+    }
+
+    constexpr auto count = std::tuple_size_v<Arguments>;
+     if (object.size() > count)
+         throw std::invalid_argument{ "extra named" };
+
+    return [&]<size_t... Index>(sequence<Index...>)
+    {
+        return std::make_tuple
+        (
+            get_named<std::tuple_element_t<Index, Arguments>>(
+                names.at(Index), object)...
+        );
+    }(sequence<count>{});
+}
+
+TEMPLATE
+inline void CLASS::disallow_params(const optional_t& parameters) THROWS
+{
+    if (!parameters.has_value())
+        return;
+
+    return std::visit(overload
+    {
+        [](const rpc::array_t& params) NOEXCEPT
+        {
+            if (params.empty()) return;
+        },
+        [](const rpc::object_t& params) NOEXCEPT
+        {
+            if (params.empty()) return;
+        }
+    }, parameters.value());
+
+    throw std::invalid_argument{ "extra params" };
+}
+
+TEMPLATE
+template <typename Arguments>
+inline Arguments CLASS::extract(const optional_t& parameters,
     const rpc::names_t<Arguments>& names) THROWS
 {
     constexpr auto count = std::tuple_size_v<Arguments>;
-    if (is_zero(count) && !has_params(parameters))
+    if constexpr (is_zero(count))
+    {
+        disallow_params(parameters);
         return {};
+    }
 
-    if (!parameters.has_value())
-        throw std::invalid_argument{ "count" };
-
-    const auto get_array = [&](const rpc::array_t& array) THROWS
-    {
-        if (array.size() != count)
-            throw std::invalid_argument{ "count" };
-
-        return [&]<size_t... Index>(std::index_sequence<Index...>)
-        {
-            return std::make_tuple
-            (
-                extract<std::tuple_element_t<Index, Arguments>>(
-                    array.at(Index))...
-            );
-        }(to_sequence<count>{});
-    };
-
-    const auto get_object = [&](const rpc::object_t& object) THROWS
-    {
-        if (object.size() != count)
-            throw std::invalid_argument{ "count" };
-
-        return [&]<size_t... Index>(std::index_sequence<Index...>)
-        {
-            return std::make_tuple
-            (
-                extract<std::tuple_element_t<Index, Arguments>>(
-                    object.at(std::string{ names.at(Index) }))...
-            );
-        }(to_sequence<count>{});
-    };
-
-    const auto& params = parameters.value();
     constexpr auto mode = Interface::mode;
-
     if constexpr (mode == rpc::group::positional)
     {
-        if (!std::holds_alternative<rpc::array_t>(params))
-            throw std::invalid_argument{ "positional" };
-
-        return get_array(std::get<rpc::array_t>(params));
+        return extract_positional<Arguments>(parameters);
     }
     else if constexpr (mode == rpc::group::named)
     {
-        if (!std::holds_alternative<rpc::object_t>(params))
-            throw std::invalid_argument{ "named" };
-
-        return get_object(std::get<rpc::object_t>(params));
+        return extract_named<Arguments>(parameters, names);
     }
-    else // if constexpr (mode == rpc::group::either)
+    else // rpc::group::either
     {
-        if (std::holds_alternative<rpc::array_t>(params))
-            return get_array(std::get<rpc::array_t>(params));
+        const auto specified_params = parameters.has_value();
+        const auto positional_params = specified_params && 
+            std::holds_alternative<rpc::array_t>(parameters.value());
 
-        if (std::holds_alternative<rpc::object_t>(params))
-            return get_object(std::get<rpc::object_t>(params));
-
-        throw std::invalid_argument{ "either" };
+        if (!specified_params || positional_params)
+            return extract_positional<Arguments>(parameters);
+        else
+            return extract_named<Arguments>(parameters, names);
     }
 }
 
 TEMPLATE
 template <typename Method>
-inline code CLASS::notifier(subscriber_t<Method>& subscriber,
+inline code CLASS::notify(subscriber_t<Method>& subscriber,
     const optional_t& parameters, const rpc::names_t<Method>& names) NOEXCEPT
 {
     try
@@ -161,7 +266,7 @@ inline code CLASS::notifier(subscriber_t<Method>& subscriber,
                 subscriber.notify({}, rpc::tag_t<Method>{},
                     std::forward<decltype(args)>(args)...);
             },
-            extractor<rpc::args_t<Method>>(parameters, names)
+            extract<rpc::args_t<Method>>(parameters, names)
         );
 
         return error::success;
@@ -174,33 +279,33 @@ inline code CLASS::notifier(subscriber_t<Method>& subscriber,
 
 TEMPLATE
 template <size_t Index>
-inline code CLASS::do_notify(distributor_rpc& self,
+inline code CLASS::notifier(distributor_rpc& self,
     const optional_t& parameters) NOEXCEPT
 {
     using method = rpc::method_t<Index, methods_t>;
     auto& subscriber = std::get<Index>(self.subscribers_);
     const auto& names = std::get<Index>(Interface::methods).parameter_names();
-    return notifier<method>(subscriber, parameters, names);
+    return notify<method>(subscriber, parameters, names);
 }
 
 TEMPLATE
 template <size_t ...Index>
-inline constexpr CLASS::dispatch_t CLASS::make_dispatchers(
-    std::index_sequence<Index...>) NOEXCEPT
+inline constexpr CLASS::notifiers_t CLASS::make_notifiers(
+    rpc::sequence_t<Index...>) NOEXCEPT
 {
     return
     {
         std::make_pair
         (
             std::string{ rpc::method_t<Index, methods_t>::name },
-            &do_notify<Index>
+            &notifier<Index>
         )...
     };
 }
 
 TEMPLATE
-const typename CLASS::dispatch_t
-CLASS::dispatch_ = make_dispatchers(to_sequence<Interface::size>{});
+const typename CLASS::notifiers_t
+CLASS::notifiers_ = make_notifiers(rpc::sequence<Interface::size>{});
 
 // make_subscribers
 // ----------------------------------------------------------------------------
@@ -208,7 +313,7 @@ CLASS::dispatch_ = make_dispatchers(to_sequence<Interface::size>{});
 TEMPLATE
 template <size_t ...Index>
 inline CLASS::subscribers_t CLASS::make_subscribers(asio::strand& strand,
-    std::index_sequence<Index...>) NOEXCEPT
+    rpc::sequence_t<Index...>) NOEXCEPT
 {
     return std::make_tuple
     (
@@ -254,7 +359,7 @@ inline code CLASS::subscribe(Handler&& handler) NOEXCEPT
 
 TEMPLATE
 inline CLASS::distributor_rpc(asio::strand& strand) NOEXCEPT
-  : subscribers_(make_subscribers(strand, to_sequence<Interface::size>{}))
+  : subscribers_(make_subscribers(strand, rpc::sequence<Interface::size>{}))
 {
 }
 
@@ -262,8 +367,8 @@ TEMPLATE
 inline code CLASS::notify(const rpc::request_t& request) NOEXCEPT
 {
     BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    const auto it = dispatch_.find(request.method);
-    if (it == dispatch_.end())
+    const auto it = notifiers_.find(request.method);
+    if (it == notifiers_.end())
         return error::not_found;
 
     return it->second(*this, request.params);

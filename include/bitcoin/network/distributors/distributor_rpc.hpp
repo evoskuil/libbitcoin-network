@@ -86,40 +86,60 @@ private:
 
     template <size_t ...Index>
     static inline subscribers_t make_subscribers(asio::strand& strand,
-        std::index_sequence<Index...>) NOEXCEPT;
+        rpc::sequence_t<Index...>) NOEXCEPT;
 
     subscribers_t subscribers_;
 
-    // make_dispatchers
+    // make_notifiers
     // ------------------------------------------------------------------------
 
     using optional_t = rpc::params_option;
-    using functor_t = std::function<code(distributor_rpc&, const optional_t&)>;
-    using dispatch_t = std::unordered_map<std::string, functor_t>;
-
-    static inline bool has_params(const optional_t& parameters) NOEXCEPT;
+    using notifier_t = std::function<code(distributor_rpc&, const optional_t&)>;
+    using notifiers_t = std::unordered_map<std::string, notifier_t>;
 
     template <typename Type>
-    static inline Type extract(const rpc::value_t& value) THROWS;
+    static inline Type get(const rpc::value_t& value) THROWS;
+
+    template <typename Argument>
+    static inline rpc::outer<Argument> get_value(
+        const rpc::value_t& value) THROWS;
+
+    template <typename Argument>
+    static inline rpc::value<Argument> get_positional(size_t& position,
+        const rpc::array_t& array) THROWS;
+
+    template <typename Argument>
+    static inline rpc::value<Argument> get_named(const std::string_view& name,
+        const rpc::object_t& object) THROWS;
 
     template <typename Arguments>
-    static inline Arguments extractor(const optional_t& parameters,
+    static inline Arguments extract_positional(
+        const optional_t& parameters) THROWS;
+
+    template <typename Arguments>
+    static inline Arguments extract_named(const optional_t& parameters,
+        const rpc::names_t<Arguments>& names) THROWS;
+
+    static inline void disallow_params(const optional_t& parameters) THROWS;
+
+    template <typename Arguments>
+    static inline Arguments extract(const optional_t& parameters,
         const rpc::names_t<Arguments>& names) THROWS;
 
     template <typename Method>
-    static inline code notifier(subscriber_t<Method>& subscriber,
+    static inline code notify(subscriber_t<Method>& subscriber,
         const optional_t& parameters,
         const rpc::names_t<Method>& names) NOEXCEPT;
 
     template <size_t Index>
-    static inline code do_notify(distributor_rpc& self,
+    static inline code notifier(distributor_rpc& self,
         const optional_t& parameters) NOEXCEPT;
 
     template <size_t ...Index>
-    static inline constexpr dispatch_t make_dispatchers(
-        std::index_sequence<Index...>) NOEXCEPT;
+    static inline constexpr notifiers_t make_notifiers(
+        rpc::sequence_t<Index...>) NOEXCEPT;
 
-    static const dispatch_t dispatch_;    
+    static const notifiers_t notifiers_;
 };
 
 } // namespace network

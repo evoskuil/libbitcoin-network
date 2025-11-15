@@ -149,6 +149,9 @@ BC_PUSH_WARNING(NO_ARRAY_TO_POINTER_DECAY)
 template <text_t Text, typename ...Args>
 struct method
 {
+    static_assert(is_trailing_optionals<Args...>::value,
+        "Required parameters must precede optional/nullable parameters.");
+
     static constexpr std::string_view name{ Text.text.data(), Text.text.size() };
     static constexpr auto size = sizeof...(Args);
     using names = std::array<std::string_view, size>;
@@ -182,7 +185,13 @@ BC_POP_WARNING()
 /// Type helpers.
 /// ---------------------------------------------------------------------------
 
-/// method extraction
+template <size_t ...Index>
+using sequence_t = std::index_sequence<Index...>;
+
+template <size_t Size>
+using sequence = std::make_index_sequence<Size>;
+
+/// Method extraction.
 
 template <typename Type, typename = bool>
 struct parameter_names {};
@@ -220,16 +229,14 @@ using tag_t = typename Method::tag;
 template <size_t Index, typename Methods>
 using method_t = std::tuple_element_t<Index, Methods>;
 
-/// handler traits extraction
+/// Handler traits extraction.
 
 template <typename Handler, typename = void>
 struct traits;
 
 template <typename Handler>
 struct traits<Handler, std::void_t<decltype(&Handler::operator())>>
-  : traits<decltype(&Handler::operator())>
-{
-};
+  : traits<decltype(&Handler::operator())> {};
 
 template <typename Return, typename Class, typename Tag, typename ...Args>
 struct traits<Return(Class::*)(const code&, Tag, Args...) const NOEXCEPT>
@@ -238,7 +245,7 @@ struct traits<Return(Class::*)(const code&, Tag, Args...) const NOEXCEPT>
     using args = std::tuple<Args...>;
 };
 
-/// Type helpers (default parameter values).
+/// Types and traits for optional/nullable method parameter descriptors.
 /// ---------------------------------------------------------------------------
 
 struct optional_tag {};
@@ -280,6 +287,67 @@ struct nullable
     using tag = nullable_tag;
     using type = Type;
 };
+
+/// Parse type traits.
+
+template <typename Type, typename = void>
+struct is_optional
+  : std::false_type {};
+
+template <typename Type>
+struct is_optional<Type, std::void_t<typename Type::tag>>
+  : std::is_same<typename Type::tag, optional_tag> {};
+
+template <typename Type, typename = void>
+struct is_nullable : std::false_type {};
+
+template <typename Type>
+struct is_nullable<Type, std::void_t<typename Type::tag>>
+  : std::is_same<typename Type::tag, nullable_tag> {};
+
+template <typename Type>
+struct is_required
+  : std::bool_constant<
+        !is_optional<Type>::value &&
+        !is_nullable<Type>::value> {};
+
+template <typename Argument>
+using value =
+    iif<is_optional<Argument>::value, typename Argument::type,
+        iif<is_nullable<Argument>::value, std::optional<typename Argument::type>,
+            Argument>>;
+
+template <typename Argument>
+using inner =
+    iif<(is_optional<Argument>::value || is_nullable<Argument>::value),
+        typename Argument::type,
+            Argument>;
+
+template <typename Argument>
+using outer =
+    iif<(is_nullable<Argument>::value),
+        std::optional<rpc::inner<Argument>>,
+            rpc::inner<Argument>>;
+
+/// Detect non-trailing optional positions in methods.
+
+template <typename... Args>
+struct is_trailing_optionals;
+
+template <>
+struct is_trailing_optionals<> : std::true_type {};
+
+template <typename... Args>
+constexpr bool no_required() noexcept
+{
+    return ((!is_required<Args>::value) && ...);
+}
+
+template <typename First, typename... Rest>
+struct is_trailing_optionals<First, Rest...>
+  : iif<is_required<First>::value,
+        is_trailing_optionals<Rest...>,
+            std::bool_constant<no_required<Rest...>()>> {};
 
 } // namespace rpc
 } // namespace network
