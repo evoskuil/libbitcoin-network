@@ -28,6 +28,37 @@
 
 namespace libbitcoin {
 namespace network {
+    
+// TODO: Interface argument provides templated dispatch for rpc protocols.
+// TODO: transport independent sender methods in each are duck typed for rpc protocol.
+// TODO: network::channel_trpc<Interface> : network::channel
+// TODO: network::channel_wrpc<Interface> : network::channel_ws
+//                                        : network::channel_http
+//                                        : network::channel
+//
+// TODO: reused channel state unique to electrum/bitcoind.
+// TODO: server::channel_electrum_base
+// TODO: server::channel_bitcoind_base
+//
+// TODO: aliases.
+// TODO: server::channel_electrum_tcp : channel_electrum_base, network::channel_trpc<electrum>
+// TODO: server::channel_electrum_web : channel_electrum_base, network::channel_wrpc<electrum>
+// TODO: server::channel_bitcoind_tcp : channel_bitcoind_base, network::channel_trpc<bitcoind>
+// TODO: server::channel_bitcoind_web : channel_bitcoind_base, network::channel_wrpc<bitcoind>
+//
+// TODO: base sender methods for passthrough to channel senders.
+// TODO: these could be implemented in the two protocols to reduce compile time.
+// TODO: network::protocol_rpc<Channel> : network::protocol
+//
+// TODO: reused protocol logic unique to electrum/bitcoind.
+// TODO: server::protocol_electrum<Channel> : network::protocol_rpc<Channel>
+// TODO: server::protocol_bitcoind<Channel> : network::protocol_rpc<Channel>
+//
+// TODO: aliases.
+// TODO: server::protocol_electrum_tcp : network::protocol_electrum<channel_electrum_tcp>
+// TODO: server::protocol_electrum_web : network::protocol_electrum<channel_electrum_web> 
+// TODO: server::protocol_bitcoind_tcp : network::protocol_bitcoind<channel_bitcoind_tcp>
+// TODO: server::protocol_bitcoind_web : network::protocol_bitcoind<channel_bitcoind_web>
 
 /// Read rpc-request and send rpc-response, dispatch to Interface.
 template <typename Interface>
