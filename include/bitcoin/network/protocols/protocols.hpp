@@ -38,6 +38,5 @@
 // server
 #include <bitcoin/network/protocols/protocol_http.hpp>
 #include <bitcoin/network/protocols/protocol_rpc.hpp>
-#include <bitcoin/network/protocols/protocol_ws.hpp>
 
 #endif

@@ -26,7 +26,7 @@
 #include <bitcoin/network/messages/messages.hpp>
 #include <bitcoin/network/net/net.hpp>
 
-// TODO: This template can be re-based on channel_ws, giving it the ability to
+// TODO: This template can be re-based on channel_http giving it the ability to
 // TODO: support RPC over both tcp and http/ws. In that case the settings type
 // TODO: can be templatized and reader/writer configured at compile. Without an
 // TODO: http reader the socket cannot be upgraded to ws and thus operates as a
