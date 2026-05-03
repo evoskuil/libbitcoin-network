@@ -36,6 +36,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 // public/virtual
 // ----------------------------------------------------------------------------
 
+// Failure to call after successful message handling causes stalled channel.
 void channel_ws::receive() NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -47,14 +48,11 @@ void channel_ws::receive() NOEXCEPT
     }
 
     read(request_buffer(),
-        std::bind(&channel_ws::handle_receive_ws,
+        std::bind(&channel_ws::handle_upgraded,
             shared_from_base<channel_ws>(), _1, _2));
 }
 
-// upgraded
-// ----------------------------------------------------------------------------
-
-void channel_ws::handle_receive_ws(const code& ec, size_t bytes) NOEXCEPT
+void channel_ws::handle_upgraded(const code& ec, size_t bytes) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -77,18 +75,34 @@ void channel_ws::handle_receive_ws(const code& ec, size_t bytes) NOEXCEPT
         return;
     }
 
-    dispatch_ws(request_buffer(), bytes);
+    if (request_buffer().size() != bytes)
+    {
+        stop(error::size_mismatch);
+        return;
+    }
+
+    // In http the request buffer is a running cache, however after the socket
+    // is upgraded to a websocket, the buffer provides the request payload. As
+    // such the listener may not be restarted until payload handling complete.
+    dispatch(request_buffer());
 }
 
-void channel_ws::dispatch_ws(const http::flat_buffer&,
-    size_t LOG_ONLY(bytes)) NOEXCEPT
+void channel_ws::dispatch(const flat_buffer& buffer) NOEXCEPT
 {
-    LOGA("Websocket read of " << bytes  << " bytes [" << endpoint() << "]");
+    const auto size = buffer.size();
+    LOGA("Websocket read of " << size << " bytes [" << endpoint() << "]");
 
-    // TODO: dispatch and restart upon completion.
+    // Create a synthetic message to leverage http dispatch (unknown->ws).
+    const auto message = to_shared<request>();
 
-    // Restart reader.
-    receive();
+    // Span body requires non-const data, which is safe here.
+    BC_PUSH_WARNING(NO_CONST_CAST)
+    const auto data = const_cast<void*>(buffer.data().data());
+    BC_POP_WARNING()
+
+    message->body() = span_value{ pointer_cast<uint8_t>(data), size };
+    message->method(verb::unknown);
+    channel_http::dispatch(message);
 }
 
 // pre-upgrade

@@ -53,12 +53,11 @@ protected:
         const http::request_cptr& request) NOEXCEPT override;
 
     /// Post-upgrade websocket read.
-    virtual void handle_receive_ws(const code& ec, size_t bytes) NOEXCEPT;
+    virtual void handle_upgraded(const code& ec, size_t bytes) NOEXCEPT;
 
     /// Dispatch websocket buffer via derived handlers (override to handle).
     /// Override to handle dispatch, must invoke receive() on complete.
-    virtual void dispatch_ws(const http::flat_buffer& buffer,
-        size_t bytes) NOEXCEPT;
+    virtual void dispatch(const http::flat_buffer& buffer) NOEXCEPT;
 
 private:
     // This is protected by strand.
