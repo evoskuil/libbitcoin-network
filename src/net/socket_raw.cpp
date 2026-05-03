@@ -32,6 +32,9 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 // RAW (read).
 // ----------------------------------------------------------------------------
 
+// The flat_buffer must have sufficient capacity already allocated before the
+// RAW read is initiated. If the incoming WebSocket message exceeds the current
+// capacity, the read will fail or truncate.
 void socket::raw_read(http::flat_buffer& out,
     count_handler&& handler) NOEXCEPT
 {
@@ -51,6 +54,8 @@ void socket::do_raw_read(ref<http::flat_buffer> out,
 // RAW (write).
 // ----------------------------------------------------------------------------
 
+// The const_buffer is fully allocated before write, so this is currently
+// identical to p2p write.
 void socket::raw_write(const asio::const_buffer& in, bool binary,
     count_handler&& handler) NOEXCEPT
 {
