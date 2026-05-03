@@ -52,8 +52,8 @@ void proxy::read(http::flat_buffer& out, count_handler&& handler) NOEXCEPT
     socket_->raw_read(out, std::move(handler));
 }
 
-void proxy::write(const asio::const_buffer& in, count_handler&& handler,
-    bool binary) NOEXCEPT
+void proxy::write(const asio::const_buffer& in, bool binary,
+    count_handler&& handler) NOEXCEPT
 {
     writer call = std::bind(&proxy::do_raw_write,
         shared_from_this(), in, binary, std::move(handler));
