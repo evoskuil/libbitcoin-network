@@ -67,9 +67,9 @@ void proxy::write(const asio::const_buffer& in, count_handler&& handler,
 void proxy::do_raw_write(const asio::const_buffer& payload, bool binary,
     const count_handler& handler) NOEXCEPT
 {
-    socket_->raw_write({ payload.data(), payload.size() },
+    socket_->raw_write({ payload.data(), payload.size() }, binary,
         std::bind(&proxy::handle_write,
-            shared_from_this(), _1, _2, handler), binary);
+            shared_from_this(), _1, _2, handler));
 }
 
 //  P2P (generic, fixed size).

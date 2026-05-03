@@ -120,8 +120,8 @@ public:
 
     /// Binary or text mode applies to websockets (no-op for tcp).
     /// Write the provided buffer to socket, handler posted to socket strand.
-    virtual void raw_write(const asio::const_buffer& in,
-        count_handler&& handler, bool binary=true) NOEXCEPT;
+    virtual void raw_write(const asio::const_buffer& in, bool binary,
+        count_handler&& handler) NOEXCEPT;
 
     /// P2P (generic, fixed size).
     /// -----------------------------------------------------------------------

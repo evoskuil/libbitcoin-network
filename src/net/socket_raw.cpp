@@ -51,8 +51,8 @@ void socket::do_raw_read(ref<http::flat_buffer> out,
 // RAW (write).
 // ----------------------------------------------------------------------------
 
-void socket::raw_write(const asio::const_buffer& in,
-    count_handler&& handler, bool binary) NOEXCEPT
+void socket::raw_write(const asio::const_buffer& in, bool binary,
+    count_handler&& handler) NOEXCEPT
 {
     boost::asio::dispatch(strand_,
         std::bind(&socket::do_raw_write,
