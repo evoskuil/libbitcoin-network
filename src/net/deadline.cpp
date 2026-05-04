@@ -39,12 +39,12 @@ deadline::deadline(const logger& log, asio::strand& strand,
     timer_(strand),
     tracker<deadline>(log)
 {
-    timer_.expires_after(timeout);
+    // Timer is disarmed (epoch) at construct.
 }
 
 deadline::~deadline() NOEXCEPT
 {
-    BC_ASSERT_MSG(timer_.expiry() == epoch, "");
+    BC_ASSERT(timer_.expiry() == epoch);
 }
 
 // Start/stop must not be called concurrently.

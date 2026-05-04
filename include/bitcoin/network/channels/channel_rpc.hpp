@@ -26,39 +26,19 @@
 #include <bitcoin/network/messages/messages.hpp>
 #include <bitcoin/network/net/net.hpp>
 
+// TODO: This template can be re-based on channel_http giving it the ability to
+// TODO: support RPC over both tcp and http/ws. In that case the settings type
+// TODO: can be templatized and reader/writer configured at compile. Without an
+// TODO: http reader the socket cannot be upgraded to ws and thus operates as a
+// TODO: simple TCP socket, and TLS remains possible with all protocols. Http
+// TODO: methods are dispatched from channel to base protocol and re-dispatched
+// TODO: to subscribers. TCP/WS are dispatched to protocol as a custom method.
+// TODO: this allows the base protocol to differentiate these as non-http for
+// TODO: selection of the proper response path. As http is half duplex, notify
+// TODO: is only provided to a TCP or upgraded (WS) socket.
+
 namespace libbitcoin {
 namespace network {
-    
-// TODO: Interface argument provides templated dispatch for rpc protocols.
-// TODO: transport independent sender methods in each are duck typed for rpc protocol.
-// TODO: network::channel_trpc<Interface> : network::channel
-// TODO: network::channel_wrpc<Interface> : network::channel_ws
-//                                        : network::channel_http
-//                                        : network::channel
-//
-// TODO: reused channel state unique to electrum/bitcoind.
-// TODO: server::channel_electrum_base
-// TODO: server::channel_bitcoind_base
-//
-// TODO: aliases.
-// TODO: server::channel_electrum_tcp : channel_electrum_base, network::channel_trpc<electrum>
-// TODO: server::channel_electrum_web : channel_electrum_base, network::channel_wrpc<electrum>
-// TODO: server::channel_bitcoind_tcp : channel_bitcoind_base, network::channel_trpc<bitcoind>
-// TODO: server::channel_bitcoind_web : channel_bitcoind_base, network::channel_wrpc<bitcoind>
-//
-// TODO: base sender methods for passthrough to channel senders.
-// TODO: these could be implemented in the two protocols to reduce compile time.
-// TODO: network::protocol_rpc<Channel> : network::protocol
-//
-// TODO: reused protocol logic unique to electrum/bitcoind.
-// TODO: server::protocol_electrum<Channel> : network::protocol_rpc<Channel>
-// TODO: server::protocol_bitcoind<Channel> : network::protocol_rpc<Channel>
-//
-// TODO: aliases.
-// TODO: server::protocol_electrum_tcp : network::protocol_electrum<channel_electrum_tcp>
-// TODO: server::protocol_electrum_web : network::protocol_electrum<channel_electrum_web> 
-// TODO: server::protocol_bitcoind_tcp : network::protocol_bitcoind<channel_bitcoind_tcp>
-// TODO: server::protocol_bitcoind_web : network::protocol_bitcoind<channel_bitcoind_web>
 
 /// Read rpc-request and send rpc-response, dispatch to Interface.
 template <typename Interface>

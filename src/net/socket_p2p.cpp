@@ -54,7 +54,7 @@ void socket::do_p2p_read(const asio::mutable_buffer& out,
 void socket::p2p_write(const asio::const_buffer& in,
     count_handler&& handler) NOEXCEPT
 {
-    raw_write(in, std::move(handler), true);
+    raw_write(in, true, std::move(handler));
 }
 
 BC_POP_WARNING()
