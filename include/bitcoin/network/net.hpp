@@ -89,14 +89,15 @@ public:
 
     /// Suspensions.
     /// -----------------------------------------------------------------------
+    /// Service connections are managed independently from P2P.
 
-    /// Network connections are suspended (incoming and/or outgoing).
+    /// P2P connections are suspended (incoming and/or outgoing).
     virtual bool suspended() const NOEXCEPT;
 
-    /// Suspend all connections.
+    /// Suspend all P2P connections.
     virtual void suspend(const code& ec) NOEXCEPT;
 
-    /// Resume all connection.
+    /// Resume all P2P connection.
     virtual void resume() NOEXCEPT;
 
     /// Properties.
@@ -217,6 +218,8 @@ protected:
     friend class session;
 
     /// I/O factories.
+    virtual acceptor::ptr create_service(
+        const socket::context& context={}) NOEXCEPT;
     virtual acceptor::ptr create_acceptor(
         const socket::context& context={}) NOEXCEPT;
     virtual connector::ptr create_seed_connector() NOEXCEPT;
@@ -265,6 +268,8 @@ protected:
 
 private:
     // Suspensions.
+    void suspend_services() NOEXCEPT;
+    void resume_services() NOEXCEPT;
     void suspend_acceptors() NOEXCEPT;
     void resume_acceptors() NOEXCEPT;
     void suspend_connectors() NOEXCEPT;
@@ -310,6 +315,7 @@ private:
     const settings& settings_;
     std::atomic_bool closed_{ false };
     std::atomic_bool accept_suspended_{ false };
+    std::atomic_bool service_suspended_{ false };
     std::atomic_bool connect_suspended_{ false };
     std::atomic<size_t> total_channel_count_{};
     std::atomic<size_t> inbound_channel_count_{};
