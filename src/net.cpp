@@ -68,7 +68,23 @@ net::~net() NOEXCEPT
 // I/O factories.
 // ----------------------------------------------------------------------------
 
-// inbound/server
+// server
+// TODO: could move this to server by extending context.
+acceptor::ptr net::create_service(const socket::context& context) NOEXCEPT
+{
+    const auto& settings = network_settings();
+    socket::parameters params
+    {
+        .connect_timeout = settings.connect_timeout(),
+        .maximum_request = settings.inbound.maximum_request,
+        .context = context
+    };
+
+    return emplace_shared<acceptor>(log, strand(), service(),
+        service_suspended_, std::move(params));
+}
+
+// inbound
 acceptor::ptr net::create_acceptor(const socket::context& context) NOEXCEPT
 {
     const auto& settings = network_settings();
@@ -275,6 +291,17 @@ bool net::closed() const NOEXCEPT
 
 // Suspensions.
 // ----------------------------------------------------------------------------
+// Service connections are managed independently from P2P.
+
+void net::suspend_services() NOEXCEPT
+{
+    service_suspended_.store(true);
+}
+
+void net::resume_services() NOEXCEPT
+{
+    service_suspended_.store(false);
+}
 
 void net::suspend(const code&) NOEXCEPT
 {

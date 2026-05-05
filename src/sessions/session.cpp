@@ -340,7 +340,13 @@ void session::unsubscribe_close() NOEXCEPT
 // Factories.
 // ----------------------------------------------------------------------------
 
-// inbound/server
+// server
+acceptor::ptr session::create_service(const socket::context& context) NOEXCEPT
+{
+    return network_.create_service(context);
+}
+
+// inbound
 acceptor::ptr session::create_acceptor(const socket::context& context) NOEXCEPT
 {
     return network_.create_acceptor(context);
