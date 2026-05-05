@@ -294,7 +294,7 @@ void socket::async_write(const asio::const_buffer& buffer, bool binary,
     }
 }
 
-// read ws frames or unframed tcp bytes (up to mutable buffer capacity).
+// read ws frame or arbitrary tcp bytes, iterate (up to buffer capacity).
 void socket::async_read_some(const asio::mutable_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
@@ -320,7 +320,8 @@ void socket::async_read_some(const asio::mutable_buffer& buffer,
     }
 }
 
-// read ws message in any number of frames (fails if beyond buffer capacity).
+// read arbitrary tcp bytes, iterate (up to buffer capacity).
+// read whole ws message in any number of frames (up to buffer capacity).
 void socket::async_read(http::flat_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
@@ -335,8 +336,11 @@ void socket::async_read(http::flat_buffer& buffer,
         }
         else
         {
-            // Use async_read_some() or async_read(mutable_buffer).
-            handler(error::operation_failed, {});
+            constexpr auto size = rpc::writer::default_buffer;
+            VARIANT_DISPATCH_METHOD(get_tcp(),
+                async_read_some(buffer.prepare(size),
+                    std::bind(&socket::handle_async, shared_from_this(),
+                    _1, _2, handler, "async_read_some")));
         }
     }
     catch (const std::exception& e)
