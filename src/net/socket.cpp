@@ -265,7 +265,7 @@ asio::ssl::socket& socket::get_ssl() NOEXCEPT
 // ----------------------------------------------------------------------------
 // protected
 
-// write framed (ws) or unframed (tcp) fixed size (const buffer size).
+// write message in a single frame (ws) or unframed fixed size bytes (tcp).
 void socket::async_write(const asio::const_buffer& buffer, bool binary,
     const count_handler& handler) NOEXCEPT
 {
@@ -294,7 +294,7 @@ void socket::async_write(const asio::const_buffer& buffer, bool binary,
     }
 }
 
-// read some (up to mutable buffer capacity).
+// read ws frames or unframed tcp bytes (up to mutable buffer capacity).
 void socket::async_read_some(const asio::mutable_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
@@ -320,7 +320,7 @@ void socket::async_read_some(const asio::mutable_buffer& buffer,
     }
 }
 
-// read framed/ws (fails if beyond flat buffer capacity).
+// read ws message in any number of frames (fails if beyond buffer capacity).
 void socket::async_read(http::flat_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
@@ -346,7 +346,7 @@ void socket::async_read(http::flat_buffer& buffer,
     }
 }
 
-// read fixed/p2p (waits until mutable buffer is filled).
+// read tcp fixed count of bytes (waits until mutable buffer is filled).
 void socket::async_read(const asio::mutable_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
