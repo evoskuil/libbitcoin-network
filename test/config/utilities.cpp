@@ -382,7 +382,10 @@ BOOST_AUTO_TEST_CASE(utilities__from_address__v6_mapped_loopback__loopback_v4)
     // address.to_v4() is not the same as ipv6.to_v4(), the former is a getter
     // while the latter is a convertor.
     BOOST_REQUIRE(ip.to_v6().is_v4_mapped());
-    BOOST_REQUIRE(ip.to_v6().to_v4().is_loopback());
+
+    ////BOOST_REQUIRE(ip.to_v6().to_v4().is_loopback());
+    const auto loop = boost::asio::ip::make_address_v4(boost::asio::ip::v4_mapped, ip.to_v6());
+    BOOST_REQUIRE(loop.is_loopback());
 }
 
 BOOST_AUTO_TEST_CASE(utilities__from_address__loopback_v6__loopback_v6)

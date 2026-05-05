@@ -110,28 +110,26 @@ public:
     virtual void connect(const asio::endpoints& range,
         result_handler&& handler) NOEXCEPT;
 
-    /// RAW (generic, variable size).
+    /// WS (generic, framed).
     /// -----------------------------------------------------------------------
 
-    /// Read complete logical message for websockets (not for tcp).
-    /// Read available buffer from the socket, handler posted to socket strand.
-    virtual void raw_read(http::flat_buffer& out,
+    /// Read framed message from websocket, handler posted to socket strand.
+    virtual void ws_read(http::flat_buffer& out,
         count_handler&& handler) NOEXCEPT;
 
-    /// Binary or text mode applies to websockets (no-op for tcp).
-    /// Write the provided buffer to socket, handler posted to socket strand.
-    virtual void raw_write(const asio::const_buffer& in, bool binary,
+    /// Write buffer as frame to websocket, handler posted to socket strand.
+    virtual void ws_write(const asio::const_buffer& in, bool binary,
         count_handler&& handler) NOEXCEPT;
 
-    /// P2P (generic, fixed size).
+    /// TCP (generic, fixed size).
     /// -----------------------------------------------------------------------
 
-    /// Read fixed buffer from the socket, handler posted to socket strand.
-    virtual void p2p_read(const asio::mutable_buffer& out,
+    /// Read fixed buffer from tcp socket, handler posted to socket strand.
+    virtual void tcp_read(const asio::mutable_buffer& out,
         count_handler&& handler) NOEXCEPT;
 
-    /// Write the provided buffer to socket, handler posted to socket strand.
-    virtual void p2p_write(const asio::const_buffer& in,
+    /// Write fixed buffer to socket, handler posted to socket strand.
+    virtual void tcp_write(const asio::const_buffer& in,
         count_handler&& handler) NOEXCEPT;
 
     /// RPC (TCP: electrum/stratum_v1, WS: btcd).
@@ -142,11 +140,26 @@ public:
         count_handler&& handler) NOEXCEPT;
 
     /// Write rpc response to the socket, handler posted to socket strand.
-    virtual void rpc_write(rpc::response& response,
+    virtual void rpc_write(rpc::response&& response,
         count_handler&& handler) NOEXCEPT;
 
     /// Write rpc notification to the socket, handler posted to socket strand.
-    virtual void rpc_notify(rpc::request& notification,
+    virtual void rpc_notify(rpc::request&& notification,
+        count_handler&& handler) NOEXCEPT;
+
+    /// BODY (non-http body read/write).
+    /// -----------------------------------------------------------------------
+
+    /// Read body request from the socket, handler posted to socket strand.
+    virtual void body_read(http::flat_buffer& buffer, http::request& request,
+        count_handler&& handler) NOEXCEPT;
+
+    /// Write body response to the socket, handler posted to socket strand.
+    virtual void body_write(http::response&& response,
+        count_handler&& handler) NOEXCEPT;
+
+    /// Write body notification to the socket, handler posted to socket strand.
+    virtual void body_notify(http::request&& notification,
         count_handler&& handler) NOEXCEPT;
 
     /// HTTP (generic/rpc).
@@ -224,8 +237,8 @@ protected:
 
     /// Variant (ws vs. tcp) helpers (protected by strand).
     /// -----------------------------------------------------------------------
-    void async_read(http::flat_buffer& buffer, const count_handler& handler,
-        size_t size=rpc::writer::default_buffer) NOEXCEPT;
+    void async_read(http::flat_buffer& buffer,
+        const count_handler& handler) NOEXCEPT;
     void async_read(const asio::mutable_buffer& buffer,
         const count_handler& handler) NOEXCEPT;
     void async_read_some(const asio::mutable_buffer& buffer,
@@ -237,46 +250,49 @@ private:
     using http_parser = boost::beast::http::request_parser<http::body>;
     using http_parser_ptr = std::shared_ptr<http_parser>;
 
-    struct read_rpc
+    struct read_state
     {
-        typedef std::shared_ptr<read_rpc> ptr;
+        typedef std::shared_ptr<read_state> ptr;
 
-        read_rpc(rpc::request& request, http::flat_buffer& buffer) NOEXCEPT
-          : value{ request }, reader{ value }, buffer{ buffer }
+        read_state(http::request& request, http::flat_buffer& buffer) NOEXCEPT
+          : value{ request }, reader{ value.base(), value.body() },
+            buffer{ buffer }
         {
         }
 
-        rpc::request& value;
-        rpc::request_body::reader reader;
+        http::request& value;
+        http::body::reader reader;
         http::flat_buffer& buffer;
     };
 
-    struct write_rpc
+    struct write_state
     {
-        typedef std::shared_ptr<write_rpc> ptr;
-        using out_buffer = rpc::writer::out_buffer;
+        typedef std::shared_ptr<write_state> ptr;
+        using out_buffer = http::body::writer::out_buffer;
 
-        write_rpc(rpc::response& response) NOEXCEPT
-          : value{ response }, writer{ value }
+        write_state(http::response&& response) NOEXCEPT
+          : value{ std::move(response) }, writer{ value.base(), value.body() }
         {
         }
 
-        rpc::response& value;
-        rpc::response_body::writer writer;
+        bool more{ true };
+        http::response value;
+        http::body::writer writer;
     };
 
-    struct notify_rpc
+    struct notify_state
     {
-        typedef std::shared_ptr<notify_rpc> ptr;
-        using out_buffer = rpc::writer::out_buffer;
+        typedef std::shared_ptr<notify_state> ptr;
+        using out_buffer = http::body::writer::out_buffer;
 
-        notify_rpc(rpc::request& request) NOEXCEPT
-          : value{ request }, writer{ value }
+        notify_state(http::request&& request) NOEXCEPT
+          : value{ std::move(request) }, writer{ value.base(), value.body() }
         {
         }
 
-        rpc::request& value;
-        rpc::request_body::writer writer;
+        bool more{ true };
+        http::request value;
+        http::body::writer writer;
     };
 
     // do
@@ -299,23 +315,25 @@ private:
         const result_handler& handler) NOEXCEPT;
     void do_handshake(const result_handler& handler) NOEXCEPT;
 
-    // raw (tcp/ws)
-    void do_raw_read(ref<http::flat_buffer> out,
+    // ws (framed)
+    void do_ws_read(ref<http::flat_buffer> out,
         const count_handler& handler) NOEXCEPT;
-    void do_raw_write(const asio::const_buffer& in, bool binary,
-        const count_handler& handler) NOEXCEPT;
-
-    // p2p (tcp/ws)
-    void do_p2p_read(const asio::mutable_buffer& out,
+    void do_ws_write(const asio::const_buffer& in, bool binary,
         const count_handler& handler) NOEXCEPT;
 
-    // rpc (tcp/ws)
-    void do_rpc_read(boost_code ec, size_t total,
-        const read_rpc::ptr& in, const count_handler& handler) NOEXCEPT;
-    void do_rpc_write(boost_code ec, size_t total,
-        const write_rpc::ptr& out, const count_handler& handler) NOEXCEPT;
-    void do_rpc_notify(boost_code ec, size_t total,
-        const notify_rpc::ptr& out, const count_handler& handler) NOEXCEPT;
+    // tcp (fixed)
+    void do_tcp_read(const asio::mutable_buffer& out,
+        const count_handler& handler) NOEXCEPT;
+
+    // body
+    void do_body_read(boost_code ec, size_t total,
+        const read_state::ptr& in, const count_handler& handler) NOEXCEPT;
+    void handle_body_read(boost_code ec, size_t size, size_t total,
+        const read_state::ptr& in, const count_handler& handler) NOEXCEPT;
+    void do_body_write(boost_code ec, size_t total,
+        const write_state::ptr& out, const count_handler& handler) NOEXCEPT;
+    void do_body_notify(boost_code ec, size_t total,
+        const notify_state::ptr& out, const count_handler& handler) NOEXCEPT;
 
     // http
     void do_http_read(ref<http::flat_buffer> buffer,
@@ -347,20 +365,23 @@ private:
     void handle_handshake(const boost_code& ec,
         const result_handler& handler) NOEXCEPT;
 
-    // raw/p2p/read/write (tcp/ws)
+    // read/write (tcp/ws)
     void handle_async(const boost_code& ec, size_t size,
         const count_handler& handler,const std::string& operation) NOEXCEPT;
     void handle_async_read(const boost_code& ec, size_t size,
         const asio::mutable_buffer& buffer, const http::flat_buffer_ptr& flat,
         const count_handler& handler) NOEXCEPT;
 
-    // rpc (tcp/ws)
-    void handle_rpc_read(boost_code ec, size_t size, size_t total,
-        const read_rpc::ptr& in, const count_handler& handler) NOEXCEPT;
-    void handle_rpc_write(boost_code ec, size_t size, size_t total,
-        const write_rpc::ptr& out, const count_handler& handler) NOEXCEPT;
-    void handle_rpc_notify(boost_code ec, size_t size, size_t total,
-        const notify_rpc::ptr& out, const count_handler& handler) NOEXCEPT;
+    // rpc
+    void handle_rpc_read(const code& ec, size_t bytes,
+        const ref<rpc::request>& out, const http::request_ptr& in,
+        const count_handler& handler) NOEXCEPT;
+
+    // body
+    void handle_body_write(boost_code ec, size_t size, size_t total,
+        const write_state::ptr& out, const count_handler& handler) NOEXCEPT;
+    void handle_body_notify(boost_code ec, size_t size, size_t total,
+        const notify_state::ptr& out, const count_handler& handler) NOEXCEPT;
 
     // http (generic/rpc)
     void handle_http_read(const boost_code& ec, size_t size,

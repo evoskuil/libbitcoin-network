@@ -202,12 +202,12 @@
     <ClCompile Include="..\..\..\..\src\net\proxy_actions.cpp" />
     <ClCompile Include="..\..\..\..\src\net\proxy_queue.cpp" />
     <ClCompile Include="..\..\..\..\src\net\socket.cpp" />
+    <ClCompile Include="..\..\..\..\src\net\socket_body.cpp" />
     <ClCompile Include="..\..\..\..\src\net\socket_connect.cpp" />
     <ClCompile Include="..\..\..\..\src\net\socket_http.cpp" />
-    <ClCompile Include="..\..\..\..\src\net\socket_p2p.cpp" />
-    <ClCompile Include="..\..\..\..\src\net\socket_raw.cpp" />
     <ClCompile Include="..\..\..\..\src\net\socket_rpc.cpp" />
     <ClCompile Include="..\..\..\..\src\net\socket_stop.cpp" />
+    <ClCompile Include="..\..\..\..\src\net\socket_tcp.cpp" />
     <ClCompile Include="..\..\..\..\src\net\socket_wait.cpp" />
     <ClCompile Include="..\..\..\..\src\net\socket_ws.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\protocol.cpp" />

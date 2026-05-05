@@ -165,18 +165,18 @@ void channel_http::send(response&& response, result_handler&& handler) NOEXCEPT
     BC_ASSERT(stranded());
 
     assign_json_buffer(response);
-    const auto ptr = system::move_shared(std::move(response));
+    const auto out = system::move_shared(std::move(response));
     count_handler complete = std::bind(&channel_http::handle_send,
-        shared_from_base<channel_http>(), _1, _2, ptr, std::move(handler));
+        shared_from_base<channel_http>(), _1, _2, out, std::move(handler));
 
-    if (!ptr)
+    if (!out)
     {
         complete(error::bad_alloc, {});
         return;
     }
 
-    // response has been moved to ptr.
-    write(*ptr, std::move(complete));
+    // response has been moved to out.
+    write(*out, std::move(complete));
 }
 
 void channel_http::handle_send(const code& ec, size_t bytes,

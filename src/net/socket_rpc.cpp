@@ -18,16 +18,13 @@
  */
 #include <bitcoin/network/net/socket.hpp>
 
-#include <utility>
 #include <variant>
 #include <bitcoin/network/define.hpp>
-#include <bitcoin/network/log/log.hpp>
 
 namespace libbitcoin {
 namespace network {
 
 using namespace system;
-using namespace network::rpc;
 using namespace std::placeholders;
 
 // Shared pointers required in handler parameters so closures control lifetime.
@@ -35,207 +32,50 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// RPC (read).
-// ----------------------------------------------------------------------------
-
 void socket::rpc_read(http::flat_buffer& buffer, rpc::request& request,
     count_handler&& handler) NOEXCEPT
 {
-    boost_code ec{};
-    const auto in = emplace_shared<read_rpc>(request, buffer);
-    in->reader.init({}, ec);
+    // Create variant http request to capture read.
+    const auto in = to_shared<http::request>();
 
-    boost::asio::dispatch(strand_,
-        std::bind(&socket::do_rpc_read,
-            shared_from_this(), ec, zero, in, std::move(handler)));
-}
+    // Preselect rpc::request body value type.
+    in->body() = rpc::request{};
 
-// private
-void socket::do_rpc_read(boost_code ec, size_t total,
-    const read_rpc::ptr& in, const count_handler& handler) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    constexpr auto size = rpc::writer::default_buffer;
-
-    if (ec)
-    {
-        // Json parser emits rpc, http and json codes.
-        const auto code = error::rpc_to_error_code(ec);
-        if (code == error::unknown) logx("rpc-read", ec);
-        handler(code, total);
-        return;
-    }
-
-    async_read_some(in->buffer.prepare(size),
+    // Capture body and move it back into request reference.
+    body_read(buffer, *in,
         std::bind(&socket::handle_rpc_read,
-            shared_from_this(), _1, _2, total, in, handler));
+            shared_from_this(), _1, _2, std::ref(request), in,
+            std::move(handler)));
 }
 
 // private
-void socket::handle_rpc_read(boost_code ec, size_t size, size_t total,
-    const read_rpc::ptr& in, const count_handler& handler) NOEXCEPT
+void socket::handle_rpc_read(const code& ec, size_t bytes,
+    const ref<rpc::request>& out, const http::request_ptr& in,
+    const count_handler& handler) NOEXCEPT
 {
-    BC_ASSERT(stranded());
-
-    total = ceilinged_add(total, size);
-    if (error::asio_is_canceled(ec))
-    {
-        handler(error::channel_stopped, total);
-        return;
-    }
-
-    if (total > maximum_)
-    {
-        handler(error::message_overflow, total);
-        return;
-    }
-
     if (!ec)
     {
-        in->buffer.commit(size);
-        const auto data = in->buffer.data();
-        const auto parsed = in->reader.put(data, ec);
-        if (!ec)
-        {
-            in->buffer.consume(parsed);
-            if (in->reader.done())
-            {
-                in->reader.finish(ec);
-                if (!ec)
-                {
-                    handler(error::success, total);
-                    return;
-                }
-            }
-        }
+        // Move rpc::request from http body value to caller out param.
+        out.get() = std::move(std::get<rpc::request>(in->body().value()));
     }
 
-    // Handle error condition or incomplete message.
-    do_rpc_read(ec, total, in, handler);
+    handler(ec, bytes);
 }
 
-// RPC (write).
-// ----------------------------------------------------------------------------
-
-void socket::rpc_write(rpc::response& response,
+void socket::rpc_write(rpc::response&& response,
     count_handler&& handler) NOEXCEPT
 {
-    boost_code ec{};
-    const auto out = emplace_shared<write_rpc>(response);
-    out->writer.init(ec);
-
-    // Dispatch success or fail, for handler invoke on strand.
-    boost::asio::dispatch(strand_,
-        std::bind(&socket::do_rpc_write,
-            shared_from_this(), ec, zero, out, std::move(handler)));
+    http::response out{};
+    out.body() = std::move(response);
+    body_write(std::move(out), std::move(handler));
 }
 
-// private
-void socket::do_rpc_write(boost_code ec, size_t total,
-    const write_rpc::ptr& out, const count_handler& handler) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    const auto buffer = ec ? write_rpc::out_buffer{} : out->writer.get(ec);
-    if (ec)
-    {
-        // Json serializer emits rpc, http and json codes.
-        const auto code = error::rpc_to_error_code(ec);
-        if (code == error::unknown) logx("rpc-write", ec);
-        handler(code, total);
-        return;
-    }
-
-    BC_ASSERT(buffer.has_value());
-
-    async_write(buffer.value().first, false,
-        std::bind(&socket::handle_rpc_write,
-            shared_from_this(), _1, _2, total, out, handler));
-}
-
-// private
-void socket::handle_rpc_write(boost_code ec, size_t size, size_t total,
-    const write_rpc::ptr& out, const count_handler& handler) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    total = ceilinged_add(total, size);
-    if (error::asio_is_canceled(ec))
-    {
-        handler(error::channel_stopped, total);
-        return;
-    }
-
-    if (!ec && out->writer.done())
-    {
-        handler(error::success, total);
-        return;
-    }
-
-    // Handle error condition or incomplete message.
-    do_rpc_write(ec, total, out, handler);
-}
-
-/// RPC (notify).
-// ----------------------------------------------------------------------------
-
-void socket::rpc_notify(rpc::request& notification,
+void socket::rpc_notify(rpc::request&& notification,
     count_handler&& handler) NOEXCEPT
 {
-    boost_code ec{};
-    const auto out = emplace_shared<notify_rpc>(notification);
-    out->writer.init(ec);
-
-    // Dispatch success or fail, for handler invoke on strand.
-    boost::asio::dispatch(strand_,
-        std::bind(&socket::do_rpc_notify,
-            shared_from_this(), ec, zero, out, std::move(handler)));
-}
-
-// private
-void socket::do_rpc_notify(boost_code ec, size_t total,
-    const notify_rpc::ptr& out, const count_handler& handler) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    const auto buffer = ec ? notify_rpc::out_buffer{} : out->writer.get(ec);
-    if (ec)
-    {
-        // Json serializer emits rpc, http and json codes.
-        const auto code = error::rpc_to_error_code(ec);
-        if (code == error::unknown) logx("rpc-notify", ec);
-        handler(code, total);
-        return;
-    }
-
-    BC_ASSERT(buffer.has_value());
-
-    async_write(buffer.value().first, false,
-        std::bind(&socket::handle_rpc_notify,
-            shared_from_this(), _1, _2, total, out, handler));
-}
-
-// private
-void socket::handle_rpc_notify(boost_code ec, size_t size, size_t total,
-    const notify_rpc::ptr& out, const count_handler& handler) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    total = ceilinged_add(total, size);
-    if (error::asio_is_canceled(ec))
-    {
-        handler(error::channel_stopped, total);
-        return;
-    }
-
-    if (!ec && out->writer.done())
-    {
-        handler(error::success, total);
-        return;
-    }
-
-    // Handle error condition or incomplete message.
-    do_rpc_notify(ec, total, out, handler);
+    http::request out{};
+    out.body() = std::move(notification);
+    body_notify(std::move(out), std::move(handler));
 }
 
 BC_POP_WARNING()

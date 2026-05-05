@@ -122,7 +122,7 @@ protected:
     /// Cancel wait or any asynchronous read/write operation, handlers posted.
     virtual void cancel(result_handler&& handler) NOEXCEPT;
 
-    /// RAW (generic, variable size).
+    /// WS (generic, framed).
     /// -----------------------------------------------------------------------
 
     /// Read complete logical message for websockets (not for tcp).
@@ -135,7 +135,7 @@ protected:
     virtual void write(const asio::const_buffer& in, bool binary,
         count_handler&& handler) NOEXCEPT;
 
-    ///  P2P (generic, fixed size, WS: always binary).
+    /// TCP (generic, fixed size).
     /// -----------------------------------------------------------------------
 
     /// Read fixed-size TCP message from the remote endpoint into buffer.
@@ -154,11 +154,11 @@ protected:
         count_handler&& handler) NOEXCEPT;
 
     /// Write rpc response to the socket (json buffer in body).
-    virtual void write(rpc::response& response,
+    virtual void write(rpc::response&& response,
         count_handler&& handler) NOEXCEPT;
 
     /// Write rpc notification (request) to the socket (json buffer in body).
-    virtual void write(rpc::request& notification,
+    virtual void write(rpc::request&& notification,
         count_handler&& handler) NOEXCEPT;
 
     /// HTTP (generic/rpc).
@@ -177,13 +177,13 @@ private:
     typedef std::deque<writer> queue;
 
     // For write buffering.
-    void do_raw_write(const asio::const_buffer& payload, bool binary,
+    void do_ws_write(const asio::const_buffer& payload, bool binary,
         const count_handler& handler) NOEXCEPT;
-    void do_p2p_write(const asio::const_buffer& payload,
+    void do_tcp_write(const asio::const_buffer& payload,
         const count_handler& handler) NOEXCEPT;
-    void do_response_write(const ref<rpc::response>& response,
+    void do_response_write(const rpc::response_ptr& response,
         const count_handler& handler) NOEXCEPT;
-    void do_notification_write(const ref<rpc::request>& notification,
+    void do_notification_write(const rpc::request_ptr& notification,
         const count_handler& handler) NOEXCEPT;
     void do_subscribe_stop(const result_handler& handler,
         const result_handler& complete) NOEXCEPT;

@@ -33,7 +33,7 @@ struct message_type
   : public json::json_value
 {
     Type message{};
-    bool strict{ true };
+    bool strict{};
 };
 
 /// Derived boost::beast::http body for JSON-RPC messages.
@@ -114,6 +114,8 @@ using response = response_body::value_type;
 using response_cptr = std::shared_ptr<const response>;
 using response_ptr = std::shared_ptr<response>;
 using writer = response_body::writer;
+
+using notifier = rpc::request_body::writer;
 
 // Allows request to be sent (for notifications).
 template <typename Message>

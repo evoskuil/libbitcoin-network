@@ -32,6 +32,47 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+// WS (read).
+// ----------------------------------------------------------------------------
+// The flat_buffer's max_size() must be large enough to hold the complete ws
+// framed message. The read will fail if the message exceeds this limit.
+
+void socket::ws_read(http::flat_buffer& out,
+    count_handler&& handler) NOEXCEPT
+{
+    boost::asio::dispatch(strand_,
+        std::bind(&socket::do_ws_read,
+            shared_from_this(), std::ref(out), std::move(handler)));
+}
+
+// private
+void socket::do_ws_read(ref<http::flat_buffer> out,
+    const count_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    async_read(out.get(), handler);
+}
+
+// WS (write).
+// ----------------------------------------------------------------------------
+// Buffer is fully allocated before write, identical to tcp_write.
+
+void socket::ws_write(const asio::const_buffer& in, bool binary,
+    count_handler&& handler) NOEXCEPT
+{
+    boost::asio::dispatch(strand_,
+        std::bind(&socket::do_ws_write,
+            shared_from_this(), in, binary, std::move(handler)));
+}
+
+// private
+void socket::do_ws_write(const asio::const_buffer& in, bool binary,
+    const count_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    async_write(in, binary, handler);
+}
+
 // WS (event).
 // ----------------------------------------------------------------------------
 // This is a unique/internal aspect of websockets.
