@@ -313,7 +313,6 @@ enum error_t : uint8_t
     jsonrpc_v1_requires_array_params,
     jsonrpc_v1_requires_id,
     jsonrpc_params_not_collection,
-    jsonrpc_reader_bad_buffer,
     jsonrpc_reader_stall,
     jsonrpc_reader_exception,
     jsonrpc_writer_exception

@@ -265,6 +265,7 @@ asio::ssl::socket& socket::get_ssl() NOEXCEPT
 // ----------------------------------------------------------------------------
 // protected
 
+// write framed (ws) or unframed (tcp) fixed size (const buffer size).
 void socket::async_write(const asio::const_buffer& buffer, bool binary,
     const count_handler& handler) NOEXCEPT
 {
@@ -293,7 +294,7 @@ void socket::async_write(const asio::const_buffer& buffer, bool binary,
     }
 }
 
-
+// read some (up to mutable buffer capacity).
 void socket::async_read_some(const asio::mutable_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
@@ -319,35 +320,33 @@ void socket::async_read_some(const asio::mutable_buffer& buffer,
     }
 }
 
-// raw
+// read framed/ws (fails if beyond flat buffer capacity).
 void socket::async_read(http::flat_buffer& buffer,
-    const count_handler& handler, size_t size) NOEXCEPT
+    const count_handler& handler) NOEXCEPT
 {
     try
     {
         if (is_websocket())
         {
             buffer.consume(buffer.size());
-
-            // Complete logical message semantics.
             VARIANT_DISPATCH_METHOD(get_ws(),
                 async_read(buffer, std::bind(&socket::handle_async,
-                    shared_from_this(), _1, _2, handler, "async_read_raw")));
+                    shared_from_this(), _1, _2, handler, "async_read")));
         }
         else
         {
-            // Any available data semantics (ok).
-            async_read_some(buffer.prepare(size), handler);
+            // Use async_read_some() or async_read(mutable_buffer).
+            handler(error::operation_failed, {});
         }
     }
     catch (const std::exception& e)
     {
-        LOGF("Exception @ async_read_raw: " << e.what());
+        LOGF("Exception @ async_read: " << e.what());
         handler(error::operation_failed, {});
     }
 }
 
-// fixed/p2p
+// read fixed/p2p (waits until mutable buffer is filled).
 void socket::async_read(const asio::mutable_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
@@ -355,24 +354,20 @@ void socket::async_read(const asio::mutable_buffer& buffer,
     {
         if (is_websocket())
         {
-            const auto flat = std::make_shared<http::flat_buffer>();
-            count_handler complete = std::bind(&socket::handle_async_read,
-                shared_from_this(), _1, _2, buffer, flat, handler);
-
-            // Websocket doesn't have fixed-size reads, so simulate it.
-            async_read(*flat, std::move(complete));
+            // Websockets read frame not size, use async_read(flat_buffer).
+            handler(error::operation_failed, {});
         }
         else
         {
             // Fixed-size semantics.
             VARIANT_DISPATCH_FUNCTION(boost::asio::async_read, get_tcp(),
                 buffer, std::bind(&socket::handle_async,
-                    shared_from_this(), _1, _2, handler, "async_read_fixed"));
+                    shared_from_this(), _1, _2, handler, "async_read"));
         }
     }
     catch (const std::exception& e)
     {
-        LOGF("Exception @ async_read_fixed: " << e.what());
+        LOGF("Exception @ async_read: " << e.what());
         handler(error::operation_failed, {});
     }
 }

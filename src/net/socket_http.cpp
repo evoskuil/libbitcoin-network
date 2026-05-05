@@ -111,7 +111,7 @@ void socket::handle_http_read(const boost_code& ec, size_t size,
     }
 
     const auto code = error::http_to_error_code(ec);
-    if (code == error::unknown) logx("http", ec);
+    if (code == error::unknown) logx("http-read", ec);
     handler(code, size);
 }
 
@@ -165,7 +165,7 @@ void socket::handle_http_write(const boost_code& ec, size_t size,
     }
 
     const auto code = error::http_to_error_code(ec);
-    if (code == error::unknown) logx("http", ec);
+    if (code == error::unknown) logx("http-write", ec);
     handler(code, size);
 }
 

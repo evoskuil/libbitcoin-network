@@ -35,6 +35,18 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(NO_UNGUARDED_POINTERS)
 BC_PUSH_WARNING(NO_POINTER_ARITHMETIC)
 
+constexpr bool is_rpc_terminator(char character) NOEXCEPT
+{
+    // Batched rpc messages are array-terminated.
+    return character == '}' || character == ']';
+}
+
+constexpr bool is_electrum_terminator(char character) NOEXCEPT
+{
+    // Electrum rpc messages require a trailing newline.
+    return character == '\n';
+}
+
 // rpc::body<request_t>::reader
 // ----------------------------------------------------------------------------
 
@@ -42,21 +54,11 @@ template <>
 size_t body<rpc::request_t>::reader::
 put(const buffer_type& buffer, boost_code& ec) NOEXCEPT
 {
-    const auto size = buffer.size();
-    if (is_zero(size))
-    {
-        ec.clear();
-        return {};
-    }
-
-    if (is_null(buffer.data()))
-    {
-        ec = code{ error::jsonrpc_reader_bad_buffer };
-        return {};
-    }
-
+    // Null and empty guarded in base reader.
     const auto parsed = base::reader::put(buffer, ec);
-    if (ec || !parser_.done())
+
+    // Not done until terminated and can't search for it until parser is done.
+    if (ec || !base::reader::done())
         return parsed;
 
     // http json does not use termination.
@@ -71,20 +73,23 @@ put(const buffer_type& buffer, boost_code& ec) NOEXCEPT
         return parsed;
     }
 
-    // boost::json consumes whitespace, and leaves any subsequent chars
-    // unparsed, so terminator must be in the parsed segment of the buffer.
     const auto data = pointer_cast<const char>(buffer.data());
-    for (auto index = parsed; !is_zero(index);)
+
+    // boost::json consumes whitespace, and leaves any subsequent chars
+    // unparsed, so terminator must be in the parsed buffer segment.
+    for (auto index = parsed; !is_zero(index); --index)
     {
-        if (data[--index] == '\n')
+        const auto character = data[sub1(index)];
+        if (is_electrum_terminator(character))
         {
-            // There may be unparsed characters (ok, next message).
             has_terminator_ = true;
-            return parsed;
+            break;
         }
+
+        if (is_rpc_terminator(character))
+            break;
     }
 
-    // There is no terminator (yet).
     return parsed;
 }
 
@@ -93,13 +98,14 @@ bool body<rpc::request_t>::reader::
 done() const NOEXCEPT
 {
     // Parser may be done but with terminator still outstanding.
-    return parser_.done() && (!terminated_ || has_terminator_);
+    return base::reader::done() && (!terminated_ || has_terminator_);
 }
 
 template <>
 void body<rpc::request_t>::reader::
 finish(boost_code& ec) NOEXCEPT
 {
+    // See notes in base reader.
     base::reader::finish(ec);
     if (ec) return;
 

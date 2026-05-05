@@ -108,12 +108,12 @@ src_libbitcoin_network_la_SOURCES = \
     src/net/proxy_actions.cpp \
     src/net/proxy_queue.cpp \
     src/net/socket.cpp \
+    src/net/socket_body.cpp \
     src/net/socket_connect.cpp \
     src/net/socket_http.cpp \
-    src/net/socket_p2p.cpp \
-    src/net/socket_raw.cpp \
     src/net/socket_rpc.cpp \
     src/net/socket_stop.cpp \
+    src/net/socket_tcp.cpp \
     src/net/socket_wait.cpp \
     src/net/socket_ws.cpp \
     src/protocols/protocol.cpp \

@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(socket__read__disconnected__error)
     const auto instance = std::make_shared<socket_accessor>(log, pool.service(), std::move(params));
 
     system::data_array<42> data;
-    instance->p2p_read({ data.data(), data.size() },
+    instance->tcp_read({ data.data(), data.size() },
         [instance](const code& ec, size_t size)
         {
             // 10009 (WSAEBADF, invalid file handle) gets mapped to bad_stream.
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(socket__write__disconnected__bad_stream)
     const auto instance = std::make_shared<socket_accessor>(log, pool.service(), std::move(params));
 
     system::data_array<42> data;
-    instance->p2p_write({ data.data(), data.size() },
+    instance->tcp_write({ data.data(), data.size() },
         [instance](const code& ec, size_t size)
         {
             // 10009 (WSAEBADF, invalid file handle) gets mapped to bad_stream.

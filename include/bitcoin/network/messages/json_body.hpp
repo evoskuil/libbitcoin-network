@@ -76,11 +76,11 @@ struct body
 
     protected:
         value_type& value_;
-        boost::json::stream_parser parser_{};
 
     private:
         size_t total_{};
         http::length_type expected_{};
+        boost::json::stream_parser parser_{};
     };
 
     class writer

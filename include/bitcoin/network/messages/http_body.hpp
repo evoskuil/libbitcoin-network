@@ -70,7 +70,8 @@ using body_writer = std::variant
     buffer_writer,  //    16 bytes
     string_writer,  //     8 bytes
     json_writer,    //   136 bytes!
-    rpc::writer     //   144 bytes!
+    rpc::writer,    //   144 bytes!
+    rpc::notifier   //   144 bytes!
 >;
 
 using empty_value = http::empty_body::value_type;
@@ -177,25 +178,29 @@ struct BCT_API body
         /// Select reader based on content-type header.
         inline void assign_reader(header& header, value_type& value) NOEXCEPT
         {
-            switch (http::content_media_type(header))
+            // Allows for preselection of reader for non-http reads.
+            if (!value_.has_value())
             {
-                case http::media_type::application_json:
-                    if (value_.plain_json)
-                        value = json_value{};
-                    else
-                        value = rpc::request{};
-                    break;
-                case http::media_type::text_plain:
-                    value = string_value{};
-                    break;
-                case http::media_type::application_octet_stream:
-                    if (http::has_attachment(header))
-                        value = file_value{};
-                    else
-                        value = data_value{};
-                    break;
-                default:
-                    value = empty_value{};
+                switch (http::content_media_type(header))
+                {
+                    case http::media_type::application_json:
+                        if (value_.plain_json)
+                            value = json_value{};
+                        else
+                            value = rpc::request{};
+                        break;
+                    case http::media_type::text_plain:
+                        value = string_value{};
+                        break;
+                    case http::media_type::application_octet_stream:
+                        if (http::has_attachment(header))
+                            value = file_value{};
+                        else
+                            value = data_value{};
+                        break;
+                    default:
+                        value = empty_value{};
+                }
             }
 
             std::visit(overload
@@ -302,14 +307,17 @@ struct BCT_API body
                 },
                 [&](rpc::response& value) NOEXCEPT
                 {
-                    // json_writer is not movable (by contained serializer).
+                    // rpc::writer is not movable (by contained serializer).
                     // So requires in-place construction for variant populate.
                     return body_writer{ std::in_place_type<rpc::writer>,
                         header, value };
                 },
-                [&](rpc::request&) NOEXCEPT
+                [&](rpc::request& value) NOEXCEPT
                 {
-                    return body_writer{ std::monostate{} };
+                    // rpc::writer is not movable (by contained serializer).
+                    // So requires in-place construction for variant populate.
+                    return body_writer{ std::in_place_type<rpc::notifier>,
+                        header, value };
                 }
             }, value.value());
         }

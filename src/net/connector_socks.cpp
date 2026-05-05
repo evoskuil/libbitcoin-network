@@ -177,7 +177,7 @@ void connector_socks::do_socks_greeting_write(const code& ec,
     // Start of socket strand sequence.
     // All socket operations are dispatched to its own strand, so this write
     // will be posted before invocation. This makes socket calls thread safe.
-    socket->p2p_write({ greeting->data(), greeting->size() },
+    socket->tcp_write({ greeting->data(), greeting->size() },
         std::bind(&connector_socks::handle_socks_greeting_write,
             shared_from_base<connector_socks>(),
                 _1, _2, socket, greeting));
@@ -202,7 +202,7 @@ void connector_socks::handle_socks_greeting_write(const code& ec, size_t size,
 
     const auto response = emplace_shared<data_array<2>>();
 
-    socket->p2p_read({ response->data(), response->size() },
+    socket->tcp_read({ response->data(), response->size() },
         std::bind(&connector_socks::handle_socks_method_read,
             shared_from_base<connector_socks>(),
                 _1, _2, socket, response));
@@ -273,7 +273,7 @@ void connector_socks::handle_socks_method_read(const code& ec, size_t size,
     *it++ = narrow_cast<uint8_t>(password_length);
     it = std::copy(password.begin(), password.end(), it);
 
-    socket->p2p_write({ authenticator->data(), authenticator->size() },
+    socket->tcp_write({ authenticator->data(), authenticator->size() },
         std::bind(&connector_socks::handle_socks_authentication_write,
             shared_from_base<connector_socks>(),
                 _1, _2, socket, authenticator));
@@ -299,7 +299,7 @@ void connector_socks::handle_socks_authentication_write(const code& ec,
 
     const auto auth_res = emplace_shared<data_array<2>>();
 
-    socket->p2p_read({ auth_res->data(), auth_res->size() },
+    socket->tcp_read({ auth_res->data(), auth_res->size() },
         std::bind(&connector_socks::handle_socks_authentication_read,
             shared_from_base<connector_socks>(),
                 _1, _2, socket, auth_res));
@@ -404,7 +404,7 @@ void connector_socks::do_socks_connect_write(
         it = std::copy(port.begin(), port.end(), it);
     }
 
-    socket->p2p_write({ request->data(), request->size() },
+    socket->tcp_write({ request->data(), request->size() },
         std::bind(&connector_socks::handle_socks_connect_write,
             shared_from_base<connector_socks>(),
                 _1, _2, socket, request));
@@ -429,7 +429,7 @@ void connector_socks::handle_socks_connect_write(const code& ec, size_t size,
 
     const auto response = emplace_shared<data_array<4>>();
 
-    socket->p2p_read({ response->data(), response->size() },
+    socket->tcp_read({ response->data(), response->size() },
         std::bind(&connector_socks::handle_socks_response_read,
             shared_from_base<connector_socks>(),
                 _1, _2, socket, response));
@@ -473,7 +473,7 @@ void connector_socks::handle_socks_response_read(const code& ec, size_t size,
             // A version-4 IP address with length of 4 octets.
             const auto address = emplace_shared<data_chunk>(4u + port_size);
 
-            socket->p2p_read({ address->data(), address->size() },
+            socket->tcp_read({ address->data(), address->size() },
                 std::bind(&connector_socks::handle_socks_address_read,
                     shared_from_base<connector_socks>(),
                         _1, _2, socket, address));
@@ -484,7 +484,7 @@ void connector_socks::handle_socks_response_read(const code& ec, size_t size,
             // A version-6 IP address with length of 16 octets.
             const auto address = emplace_shared<data_chunk>(16u + port_size);
 
-            socket->p2p_read({ address->data(), address->size() },
+            socket->tcp_read({ address->data(), address->size() },
                 std::bind(&connector_socks::handle_socks_address_read,
                     shared_from_base<connector_socks>(),
                         _1, _2, socket, address));
@@ -497,7 +497,7 @@ void connector_socks::handle_socks_response_read(const code& ec, size_t size,
             // of name that follow (and excludes two byte length of the port).
             const auto length = emplace_shared<data_array<1>>();
 
-            socket->p2p_read({ length->data(), sizeof(uint8_t) },
+            socket->tcp_read({ length->data(), sizeof(uint8_t) },
                 std::bind(&connector_socks::handle_socks_length_read,
                     shared_from_base<connector_socks>(),
                         _1, _2, socket, length));
@@ -532,7 +532,7 @@ void connector_socks::handle_socks_length_read(const code& ec, size_t size,
     const auto length = host_length->front() + port_size;
     const auto address = emplace_shared<data_chunk>(length);
 
-    socket->p2p_read({ address->data(), address->size() },
+    socket->tcp_read({ address->data(), address->size() },
         std::bind(&connector_socks::handle_socks_address_read,
             shared_from_base<connector_socks>(),
                 _1, _2, socket, address));

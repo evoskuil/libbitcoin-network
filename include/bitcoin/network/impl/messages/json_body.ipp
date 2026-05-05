@@ -61,6 +61,19 @@ size_t CLASS::reader::put(const buffer_type& buffer, boost_code& ec) NOEXCEPT
     using namespace system;
     using namespace network::error;
 
+    const auto size = buffer.size();
+    if (is_zero(size))
+    {
+        ec.clear();
+        return {};
+    }
+
+    if (is_null(buffer.data()))
+    {
+        ec = to_http_code(http_error_t::bad_alloc);
+        return {};
+    }
+
     try
     {
         const auto data = pointer_cast<const char>(buffer.data());
@@ -89,21 +102,32 @@ size_t CLASS::reader::put(const buffer_type& buffer, boost_code& ec) NOEXCEPT
 TEMPLATE
 void CLASS::reader::finish(boost_code& ec) NOEXCEPT
 {
-    ec.clear();
+    // Finishing can be very confusing. The derived rpc body calls this base
+    // method, and then the virtual done() is tested to determine whether the
+    // logical object is fully read (including optionally required terminator).
+    // Any error code here signals the beast reader (and any reader that
+    // terminates based on the end of the framed data, such as websockets) that
+    // the parse has failed (terminal error). However for custom stream readers
+    // that may not be aware of byte termination, the `need_more` implies that
+    // the parse has not failed and that more bytes may be parsed. In either
+    // case, when this is called and the parse is complete, then the parsed
+    // json object is moved to the model and the parser is released. In the
+    // case of the derived json-rpc reader, the json is also then converted to
+    // the rpc model if valid, otherwise returning a failure code. In no case
+    // is the underlying parser_.finish(ec) ever called, as that would preclude
+    // use in the unbounded scenario.
 
-    // Calling parser.finish() when parser.done() results in error::incomplete.
-    if (!parser_.done())
+    using namespace network::error;
+    if (!done())
     {
-        BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-        parser_.finish(ec);
-        BC_POP_WARNING()
-
-        if (ec) return;
+        ec = to_http_code(http_error_t::need_more);
+        return;
     }
 
     try
     {
-       value_.model = parser_.release();
+        ec.clear();
+        value_.model = parser_.release();
     }
     catch (const boost::system::system_error& e)
     {
@@ -113,7 +137,6 @@ void CLASS::reader::finish(boost_code& ec) NOEXCEPT
     catch (...)
     {
         // As a catch-all we blame alloc.
-        using namespace network::error;
         ec = to_http_code(http_error_t::bad_alloc);
     }
 
@@ -158,9 +181,15 @@ CLASS::writer::out_buffer
 CLASS::writer::get(boost_code& ec) NOEXCEPT
 {
     using namespace network::error;
-    if (serializer_.done())
+    if (done())
     {
         ec = to_http_code(http_error_t::end_of_stream);
+        return {};
+    }
+
+    if (!value_.buffer)
+    {
+        ec = to_http_code(http_error_t::bad_alloc);
         return {};
     }
 

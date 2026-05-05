@@ -55,8 +55,8 @@ inline void CLASS::resume() NOEXCEPT
 
 // Read cycle.
 // ----------------------------------------------------------------------------
+// Failure to call receive() after successful message handling stalls channel.
 
-// Failure to call after successful message handling causes stalled channel.
 TEMPLATE
 inline void CLASS::receive() NOEXCEPT
 {
@@ -69,19 +69,8 @@ inline void CLASS::receive() NOEXCEPT
         return;
 
     reading_ = true;
-    const auto in = emplace_shared<rpc::request>
-    (
-        // default json model, unused size_hint, unused serialization buffer.
-        json::json_value{},
+    const auto in = to_shared<rpc::request>();
 
-        // default incoming rpc message.
-        rpc::request_t{},
-
-        // !strict allows params singleton to be accepted as array (Electrum).
-        false
-    );
-
-    // Post handle_read to strand upon stop, error, or buffer full.
     read(request_buffer(), *in,
         std::bind(&channel_rpc::handle_receive,
             shared_from_base<channel_rpc>(), _1, _2, in));
@@ -149,6 +138,15 @@ inline http::flat_buffer& CLASS::request_buffer() NOEXCEPT
 // Send.
 // ----------------------------------------------------------------------------
 
+template <typename Message>
+std::string extract_method(const Message& message) NOEXCEPT
+{
+    if constexpr (is_same_type<Message, rpc::response_t>)
+        return "response: " + message.error.value_or(rpc::result_t{}).message;
+    else
+        return "request: " + message.method;
+}
+
 // protected
 TEMPLATE
 template <typename Message>
@@ -157,52 +155,38 @@ inline void CLASS::send(Message&& message, size_t size_hint,
 {
     BC_ASSERT(stranded());
     using namespace std::placeholders;
-    using namespace system;
 
-    // Templated message due to notification sending request_t.
-    const auto out = emplace_shared<rpc::message_value<Message>>
-    (
-        // default json model, buffer size_hint, default serialization buffer.
-        json::json_value{ {}, size_hint, {} },
+    auto complete = std::bind(&CLASS::handle_send<Message>,
+        shared_from_base<CLASS>(), _1, _2, extract_method(message),
+        std::move(handler));
 
-        // outgoing rpc message (request_t or response_t).
-        std::forward<Message>(message),
-
-        // unused strict json-rpc.
-        true
-    );
-
-    // Write message to socket, capture its pointer for lifetime.
-    write(*out, std::bind(&CLASS::handle_send<Message>,
-        shared_from_base<CLASS>(), _1, _2, out, std::move(handler)));
+    // Write message (response or notification) to socket.
+    write(
+    {
+        json::json_value{ .size_hint = size_hint },
+        std::forward<Message>(message)
+    }, std::move(complete));
 }
 
 // protected
 TEMPLATE
 template <typename Message>
 inline void CLASS::handle_send(const code& ec, size_t bytes,
-    const rpc::message_cptr<Message>& message,
-    const result_handler& handler) NOEXCEPT
+    const std::string& method, const result_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (ec) stop(ec);
+    if (ec)
+        stop(ec);
+
+    LOGA("Rpc " << method << " (" << bytes << ") bytes [" << endpoint() << "] ");
 
     // Typically a noop, but handshake may pause channel here.
     handler(ec);
 
-    // Only invoke continuation for a request response (not notification).
+    // Restart the listener (following response to request only).
     if constexpr (is_same_type<Message, rpc::response_t>)
     {
-        LOGA("Rpc response: (" << bytes << ") bytes [" << endpoint() << "] "
-            << message->message.error.value_or(rpc::result_t{}).message);
-
-        // Continue the read loop (does not unpause or restart).
         receive();
-    }
-    else
-    {
-        LOGA("Rpc notification: (" << bytes << ") bytes [" << endpoint() << "] "
-            << message->message.method);
     }
 }
 

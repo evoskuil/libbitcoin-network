@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(rpc_body_reader__finish__simple_request_terminated_with_new
     BOOST_REQUIRE(body.model.is_null());
 }
 
-BOOST_AUTO_TEST_CASE(rpc_body_reader__finish__simple_request_terminated_without_newline__success_not_done)
+BOOST_AUTO_TEST_CASE(rpc_body_reader__finish__simple_request_terminated_without_newline__need_more_not_done)
 {
     const std::string_view text{ R"({"jsonrpc":"2.0","id":1,"method":"test"})" };
     const asio::const_buffer buffer{ text.data(), text.size() };
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(rpc_body_reader__finish__simple_request_terminated_without_
     BOOST_REQUIRE(!ec);
 
     reader.finish(ec);
-    BOOST_REQUIRE(!ec);
+    BOOST_REQUIRE(ec == error::http_error_t::need_more);
     BOOST_REQUIRE(!reader.done());
 }
 

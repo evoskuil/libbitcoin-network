@@ -29,32 +29,34 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// P2P (read).
+// TCP (read).
 // ----------------------------------------------------------------------------
+// Fixed-size read that completes only when the mutable_buffer is filled.
 
-void socket::p2p_read(const asio::mutable_buffer& out,
+void socket::tcp_read(const asio::mutable_buffer& out,
     count_handler&& handler) NOEXCEPT
 {
     boost::asio::dispatch(strand_,
-        std::bind(&socket::do_p2p_read,
+        std::bind(&socket::do_tcp_read,
             shared_from_this(), out, std::move(handler)));
 }
 
 // private
-void socket::do_p2p_read(const asio::mutable_buffer& out,
+void socket::do_tcp_read(const asio::mutable_buffer& out,
     const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
     async_read(out, handler);
 }
 
-// P2P (write).
+// TCP (write).
 // ----------------------------------------------------------------------------
+// Buffer is fully allocated before write, identical to ws_write.
 
-void socket::p2p_write(const asio::const_buffer& in,
+void socket::tcp_write(const asio::const_buffer& in,
     count_handler&& handler) NOEXCEPT
 {
-    raw_write(in, true, std::move(handler));
+    ws_write(in, true, std::move(handler));
 }
 
 BC_POP_WARNING()
