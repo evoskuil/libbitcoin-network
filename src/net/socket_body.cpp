@@ -63,7 +63,6 @@ void socket::do_body_read(boost_code ec, size_t total,
     const read_state::ptr& in, const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    constexpr auto size = rpc::writer::default_buffer;
 
     if (ec)
     {
@@ -73,7 +72,13 @@ void socket::do_body_read(boost_code ec, size_t total,
         return;
     }
 
-    async_read_some(in->buffer.prepare(size),
+    // This reader is designed to accept native beast bodies, which require the
+    // buffer size to be known so that finish() is called only after all data
+    // is passed. For websockets this reads a full logical message into the
+    // flat buffer. For tcp the reader will iterate over the buffer using
+    // async_read_some here, and calls reader.finish() after each. So the body
+    // reader is usable on tcp only for bodies that allow finish() iteration.
+    async_read(in->buffer,
         std::bind(&socket::handle_body_read,
             shared_from_this(), _1, _2, total, in, handler));
 }
