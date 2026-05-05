@@ -63,7 +63,6 @@ void socket::do_body_read(boost_code ec, size_t total,
     const read_state::ptr& in, const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    constexpr auto size = rpc::writer::default_buffer;
 
     if (ec)
     {
