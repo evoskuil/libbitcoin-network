@@ -158,7 +158,7 @@ void proxy::do_notification_write(const rpc::request_ptr& notification,
             shared_from_this(), _1, _2, handler));
 }
 
-// HTTP (generic/rpc).
+// HTTP/WS (generic/rpc).
 // ----------------------------------------------------------------------------
 
 // Method reading() is invoked directly if read() is called from strand().

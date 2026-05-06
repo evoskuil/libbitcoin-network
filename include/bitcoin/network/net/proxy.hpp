@@ -161,14 +161,16 @@ protected:
     virtual void write(rpc::request&& notification,
         count_handler&& handler) NOEXCEPT;
 
-    /// HTTP (generic/rpc).
+    /// HTTP/WS (generic/rpc).
     /// -----------------------------------------------------------------------
 
     /// Read http request from the socket, using provided buffer.
+    /// If socket is websocket request body type must have been set by caller.
     virtual void read(http::flat_buffer& buffer, http::request& request,
         count_handler&& handler) NOEXCEPT;
 
     /// Write http response to the socket (json buffer in body).
+    /// If socket is websocket body is written (headers ignored).
     virtual void write(http::response&& response,
         count_handler&& handler) NOEXCEPT;
 

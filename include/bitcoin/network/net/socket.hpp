@@ -162,7 +162,7 @@ public:
     virtual void body_notify(http::request&& notification,
         count_handler&& handler) NOEXCEPT;
 
-    /// HTTP (generic/rpc).
+    /// HTTP/WS (generic/rpc).
     /// -----------------------------------------------------------------------
 
     /// Read http request from the socket, handler posted to socket strand.

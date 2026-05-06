@@ -38,7 +38,7 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// HTTP (read).
+// HTTP/WS (read).
 // ----------------------------------------------------------------------------
 
 void socket::http_read(http::flat_buffer& buffer,
@@ -87,7 +87,7 @@ void socket::handle_http_read(const boost_code& ec, size_t size,
     handler(code, size);
 }
 
-// HTTP (write).
+// HTTP/WS (write).
 // ----------------------------------------------------------------------------
 
 void socket::http_write(http::response&& response,
