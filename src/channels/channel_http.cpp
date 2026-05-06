@@ -192,15 +192,17 @@ void channel_http::handle_send(const code& ec, size_t bytes,
 }
 
 // private
-void channel_http::assign_json_buffer(response& ) NOEXCEPT
+void channel_http::assign_json_buffer(response& response) NOEXCEPT
 {
-    // TODO: limit to http (not full duplex safe).
-    ////if (const auto& body = response.body();
-    ////    body.contains<json_body::value_type>())
-    ////{
-    ////    auto& value = body.get<json_body::value_type>();
-    ////    value.buffer = response_buffer_;
-    ////}
+    // websocket is full duplex, so cannot use shared json repsonse buffer.
+    if (!websocket())
+    {
+        const auto& body = response.body();
+        if (body.contains<json_body::value_type>())
+            body.get<json_body::value_type>().buffer = response_buffer_;
+        else if (body.contains<rpc::request>())
+            body.get<rpc::request>().buffer = response_buffer_;
+    }
 }
 
 // unauthorized helpers
