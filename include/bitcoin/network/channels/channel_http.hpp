@@ -93,14 +93,12 @@ protected:
     virtual void handle_receive(const code& ec, size_t bytes,
         const http::request_cptr& request) NOEXCEPT;
     virtual void handle_send(const code& ec, size_t bytes,
-        const http::response_cptr& response,
-        const result_handler& handler) NOEXCEPT;
+        const std::string& message, const result_handler& handler) NOEXCEPT;
 
 private:
     void handle_unauthorized(const code& ec) NOEXCEPT;
-    void log_message(const http::request& request,
-        size_t bytes) const NOEXCEPT;
-    void log_message(const http::response& response,
+    std::string log_message(const http::response& response) const NOEXCEPT;
+    std::string log_message(const http::request& request,
         size_t bytes) const NOEXCEPT;
 
     // This is thread safe.

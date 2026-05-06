@@ -26,6 +26,9 @@
 namespace libbitcoin {
 namespace network {
 
+// Shared pointers required in handler parameters so closures control lifetime.
+BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
+BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 using namespace system;
@@ -166,13 +169,38 @@ void proxy::read(http::flat_buffer& buffer, http::request& request,
     socket_->http_read(buffer, request, std::move(handler));
 }
 
-// Writes are composed but http is half duplex so there is no interleave risk.
-void proxy::write(http::response& response,
+void proxy::write(http::response&& response,
     count_handler&& handler) NOEXCEPT
 {
-    socket_->http_write(response, std::move(handler));
+    if (socket_->is_websocket())
+    {
+        // Pointer ships moveable message through the send queue.
+        const auto out = move_shared(std::move(response));
+        writer call = std::bind(&proxy::do_http_write,
+            shared_from_this(), out, std::move(handler));
+
+        boost::asio::dispatch(strand(),
+            std::bind(&proxy::do_write,
+                shared_from_this(), std::move(call)));
+    }
+    else
+    {
+        // http is half duplex so there is no interleave risk.
+        socket_->http_write(std::move(response), std::move(handler));
+    }
 }
 
+// private
+void proxy::do_http_write(const http::response_ptr& response,
+    const count_handler& handler) NOEXCEPT
+{
+    socket_->http_write(std::move(*response),
+        std::bind(&proxy::handle_write,
+            shared_from_this(), _1, _2, handler));
+}
+
+BC_POP_WARNING()
+BC_POP_WARNING()
 BC_POP_WARNING()
 
 } // namespace network

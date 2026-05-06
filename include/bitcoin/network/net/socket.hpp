@@ -170,7 +170,7 @@ public:
         count_handler&& handler) NOEXCEPT;
 
     /// Write http response to the socket, handler posted to socket strand.
-    virtual void http_write(http::response& response,
+    virtual void http_write(http::response&& response,
         count_handler&& handler) NOEXCEPT;
 
     /// Properties.
@@ -203,6 +203,9 @@ public:
     /// Get the network threadpool iocontext.
     virtual asio::context& service() const NOEXCEPT;
 
+    /// The socket was upgraded to a websocket (requires strand).
+    virtual bool is_websocket() const NOEXCEPT;
+
 protected:
     using ws_t = std::variant<ref<ws::socket>, ref<ws::ssl::socket>>;
     using tcp_t = std::variant<ref<asio::socket>, ref<asio::ssl::socket>>;
@@ -221,9 +224,6 @@ protected:
 
     /// The socket was upgraded to ssl (requires strand).
     bool is_secure() const NOEXCEPT;
-
-    /// The socket was upgraded to a websocket (requires strand).
-    bool is_websocket() const NOEXCEPT;
 
     /// The socket is not upgraded (asio::socket).
     bool is_base() const NOEXCEPT;
@@ -244,6 +244,10 @@ protected:
     void async_read_some(const asio::mutable_buffer& buffer,
         const count_handler& handler) NOEXCEPT;
     void async_write(const asio::const_buffer& buffer, bool binary,
+        const count_handler& handler) NOEXCEPT;
+    void async_read_http(http::flat_buffer& buffer, http::request& request,
+        const count_handler& handler) NOEXCEPT;
+    void async_write_http(http::response&& response,
         const count_handler& handler) NOEXCEPT;
 
 private:
@@ -339,7 +343,7 @@ private:
     void do_http_read(ref<http::flat_buffer> buffer,
         const ref<http::request>& request,
         const count_handler& handler) NOEXCEPT;
-    void do_http_write(const ref<http::response>& response,
+    void do_http_write(const http::response_ptr& response,
         const count_handler& handler) NOEXCEPT;
 
     // handle
@@ -368,9 +372,6 @@ private:
     // read/write (tcp/ws)
     void handle_async(const boost_code& ec, size_t size,
         const count_handler& handler,const std::string& operation) NOEXCEPT;
-    void handle_async_read(const boost_code& ec, size_t size,
-        const asio::mutable_buffer& buffer, const http::flat_buffer_ptr& flat,
-        const count_handler& handler) NOEXCEPT;
 
     // rpc
     void handle_rpc_read(const code& ec, size_t bytes,
@@ -383,11 +384,12 @@ private:
     void handle_body_notify(boost_code ec, size_t size, size_t total,
         const notify_state::ptr& out, const count_handler& handler) NOEXCEPT;
 
-    // http (generic/rpc)
+    // http/ws (native/rpc)
     void handle_http_read(const boost_code& ec, size_t size,
         const ref<http::request>& request, const http_parser_ptr& parser,
         const count_handler& handler) NOEXCEPT;
     void handle_http_write(const boost_code& ec, size_t size,
+        const http::response_ptr& request,
         const count_handler& handler) NOEXCEPT;
 
     // utility

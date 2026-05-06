@@ -169,7 +169,7 @@ protected:
         count_handler&& handler) NOEXCEPT;
 
     /// Write http response to the socket (json buffer in body).
-    virtual void write(http::response& response,
+    virtual void write(http::response&& response,
         count_handler&& handler) NOEXCEPT;
 
 private:
@@ -177,6 +177,8 @@ private:
     typedef std::deque<writer> queue;
 
     // For write buffering.
+    void do_http_write(const http::response_ptr& response,
+        const count_handler& handler) NOEXCEPT;
     void do_ws_write(const asio::const_buffer& payload, bool binary,
         const count_handler& handler) NOEXCEPT;
     void do_tcp_write(const asio::const_buffer& payload,
