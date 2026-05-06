@@ -67,6 +67,10 @@ public:
     void send(http::response&& response,
         result_handler&& handler) NOEXCEPT;
 
+    /// Send without restarting the listener.
+    void notify(http::response&& notification,
+        result_handler&& handler) NOEXCEPT;
+
     /// Resume reading from the socket (requires strand).
     void resume() NOEXCEPT override;
 
@@ -95,7 +99,7 @@ protected:
     /// Handlers.
     virtual void handle_receive(const code& ec, size_t bytes,
         const http::request_cptr& request) NOEXCEPT;
-    virtual void handle_send(const code& ec, size_t bytes,
+    virtual void handle_send(const code& ec, size_t bytes, bool notification,
         const std::string& message, const result_handler& handler) NOEXCEPT;
 
 private:

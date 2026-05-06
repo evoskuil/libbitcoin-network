@@ -167,7 +167,7 @@ request_ptr channel_http::create_request() const NOEXCEPT
     return out;
 }
 
-// Send.
+// Send/notify.
 // ----------------------------------------------------------------------------
 
 void channel_http::send(response&& response, result_handler&& handler) NOEXCEPT
@@ -179,11 +179,25 @@ void channel_http::send(response&& response, result_handler&& handler) NOEXCEPT
 
     write(std::move(response),
         std::bind(&channel_http::handle_send,
-            shared_from_base<channel_http>(), _1, _2, std::move(message),
+            shared_from_base<channel_http>(), _1, _2, false, std::move(message),
                 std::move(handler)));
 }
 
-void channel_http::handle_send(const code& ec, size_t bytes,
+void channel_http::notify(response&& notification,
+    result_handler&& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    BC_ASSERT(websocket());
+
+    auto message = log_message(notification);
+
+    write(std::move(notification),
+        std::bind(&channel_http::handle_send,
+            shared_from_base<channel_http>(), _1, _2, true, std::move(message),
+                std::move(handler)));
+}
+
+void channel_http::handle_send(const code& ec, size_t bytes, bool notification,
     const std::string& message, const result_handler& handler) NOEXCEPT
 {
     if (ec) stop(ec);
@@ -191,8 +205,8 @@ void channel_http::handle_send(const code& ec, size_t bytes,
     handler(ec);
 
     // Restart the listener (only in response to requests).
-    // TODO: use new ::send(rresponse, handler) method to differentiate.
-    receive();
+    if (!notification)
+        receive();
 }
 
 // private
