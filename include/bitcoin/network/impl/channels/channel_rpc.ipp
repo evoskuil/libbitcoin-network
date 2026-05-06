@@ -69,8 +69,8 @@ inline void CLASS::receive() NOEXCEPT
         return;
 
     reading_ = true;
-    const auto in = to_shared<rpc::request>();
-
+    const auto in = create_request();
+    
     read(request_buffer(), *in,
         std::bind(&channel_rpc::handle_receive,
             shared_from_base<channel_rpc>(), _1, _2, in));
@@ -128,11 +128,22 @@ inline void CLASS::dispatch(const rpc::request_cptr& request) NOEXCEPT
         stop(code);
 }
 
+// request helpers
+// ----------------------------------------------------------------------------
+
 TEMPLATE
 inline http::flat_buffer& CLASS::request_buffer() NOEXCEPT
 {
     BC_ASSERT(stranded());
     return request_buffer_;
+}
+
+TEMPLATE
+inline rpc::request_ptr CLASS::create_request() const NOEXCEPT
+{
+    const auto out = system::to_shared<rpc::request>();
+    out->strict = true;
+    return out;
 }
 
 // Send.
@@ -183,7 +194,7 @@ inline void CLASS::handle_send(const code& ec, size_t bytes,
     // Typically a noop, but handshake may pause channel here.
     handler(ec);
 
-    // Restart the listener (following response to request only).
+    // Restart the listener (only in response to requests).
     if constexpr (is_same_type<Message, rpc::response_t>)
     {
         receive();

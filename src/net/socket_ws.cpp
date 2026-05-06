@@ -128,7 +128,7 @@ void socket::handle_ws_event(ws::frame_type kind,
 code socket::set_websocket(const http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    BC_ASSERT(!is_websocket());
+    BC_ASSERT(!websocket());
 
     try
     {

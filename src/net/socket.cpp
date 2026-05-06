@@ -89,6 +89,38 @@ socket::~socket() NOEXCEPT
 // Properties.
 // ----------------------------------------------------------------------------
 
+asio::context& socket::service() const NOEXCEPT
+{
+    return service_;
+}
+
+asio::strand& socket::strand() NOEXCEPT
+{
+    return strand_;
+}
+
+bool socket::stranded() const NOEXCEPT
+{
+    return strand_.running_in_this_thread();
+}
+
+bool socket::stopped() const NOEXCEPT
+{
+    return stopped_.load();
+}
+
+bool socket::inbound() const NOEXCEPT
+{
+    return inbound_;
+}
+
+bool socket::websocket() const NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    return std::holds_alternative<ws::socket>(socket_) ||
+        std::holds_alternative<ws::ssl::socket>(socket_);
+}
+
 const config::address& socket::address() const NOEXCEPT
 {
     return address_;
@@ -97,38 +129,6 @@ const config::address& socket::address() const NOEXCEPT
 const config::endpoint& socket::endpoint() const NOEXCEPT
 {
     return endpoint_;
-}
-
-bool socket::inbound() const NOEXCEPT
-{
-    return inbound_;
-}
-
-bool socket::stopped() const NOEXCEPT
-{
-    return stopped_.load();
-}
-
-bool socket::stranded() const NOEXCEPT
-{
-    return strand_.running_in_this_thread();
-}
-
-asio::strand& socket::strand() NOEXCEPT
-{
-    return strand_;
-}
-
-asio::context& socket::service() const NOEXCEPT
-{
-    return service_;
-}
-
-bool socket::is_websocket() const NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    return std::holds_alternative<ws::socket>(socket_) ||
-        std::holds_alternative<ws::ssl::socket>(socket_);
 }
 
 // Context.
@@ -161,7 +161,7 @@ bool socket::is_base() const NOEXCEPT
 socket::ws_t socket::get_ws() NOEXCEPT
 {
     BC_ASSERT(stranded());
-    BC_ASSERT(is_websocket());
+    BC_ASSERT(websocket());
 
     return std::visit(overload
     {
@@ -187,7 +187,7 @@ socket::ws_t socket::get_ws() NOEXCEPT
 socket::tcp_t socket::get_tcp() NOEXCEPT
 {
     BC_ASSERT(stranded());
-    BC_ASSERT(!is_websocket());
+    BC_ASSERT(!websocket());
 
     return std::visit(overload
     {
@@ -273,7 +273,7 @@ void socket::async_write(const asio::const_buffer& buffer, bool binary,
 
     try
     {
-        if (is_websocket())
+        if (websocket())
         {
             VARIANT_DISPATCH_METHOD(get_ws(), binary(binary));
             VARIANT_DISPATCH_METHOD(get_ws(),
@@ -300,7 +300,7 @@ void socket::async_read_some(const asio::mutable_buffer& buffer,
 {
     try
     {
-        if (is_websocket())
+        if (websocket())
         {
             VARIANT_DISPATCH_METHOD(get_ws(),
                 async_read_some(buffer, std::bind(&socket::handle_async,
@@ -327,7 +327,7 @@ void socket::async_read(http::flat_buffer& buffer,
 {
     try
     {
-        if (is_websocket())
+        if (websocket())
         {
             buffer.consume(buffer.size());
             VARIANT_DISPATCH_METHOD(get_ws(),
@@ -355,7 +355,7 @@ void socket::async_read(const asio::mutable_buffer& buffer,
 {
     try
     {
-        if (is_websocket())
+        if (websocket())
         {
             // Websockets read frame not size, use async_read(flat_buffer).
             handler(error::operation_failed, {});
@@ -382,7 +382,7 @@ void socket::async_read_http(http::flat_buffer& buffer, http::request& request,
 
     try
     {
-        if (is_websocket())
+        if (websocket())
         {
             // The body reader processes a websocket read just like a
             // beast::http::async_read but without the headers. The expected
@@ -417,7 +417,7 @@ void socket::async_write_http(http::response&& response,
 
     try
     {
-        if (is_websocket())
+        if (websocket())
         {
             // The body writer processes a websocket write just like a
             // beast::http::async_write but without the headers. The expected
@@ -455,7 +455,7 @@ void socket::handle_async(const boost_code& ec, size_t size,
         return;
     }
 
-    const auto code = is_websocket() ? error::ws_to_error_code(ec) :
+    const auto code = websocket() ? error::ws_to_error_code(ec) :
         error::asio_to_error_code(ec);
 
     if (code == error::unknown)

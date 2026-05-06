@@ -172,7 +172,7 @@ void proxy::read(http::flat_buffer& buffer, http::request& request,
 void proxy::write(http::response&& response,
     count_handler&& handler) NOEXCEPT
 {
-    if (socket_->is_websocket())
+    if (socket_->websocket())
     {
         // Pointer ships moveable message through the send queue.
         const auto out = move_shared(std::move(response));

@@ -176,6 +176,27 @@ public:
     /// Properties.
     /// -----------------------------------------------------------------------
 
+    /// Get the network threadpool iocontext.
+    virtual asio::context& service() const NOEXCEPT;
+
+    /// Get the strand of the socket.
+    virtual asio::strand& strand() NOEXCEPT;
+
+    /// The strand is running in this thread.
+    virtual bool stranded() const NOEXCEPT;
+
+    /// Stop has been signaled, work is stopping.
+    virtual bool stopped() const NOEXCEPT;
+
+    /// The socket was accepted (vs. connected).
+    virtual bool inbound() const NOEXCEPT;
+
+    /// The socket upgrades to its secure configuration upon connect.
+    virtual bool secure() const NOEXCEPT;
+
+    /// The socket was upgraded to a websocket (requires strand).
+    virtual bool websocket() const NOEXCEPT;
+
     /// Get the address of the outgoing endpoint passed via construct, or the
     /// resolved endpoint address for incoming connections.
     virtual const config::address& address() const NOEXCEPT;
@@ -184,27 +205,6 @@ public:
     /// resolution for incoming and non-proxied outgoing. For a proxied
     /// connection (outgoing only) this is the value passed via construct.
     virtual const config::endpoint& endpoint() const NOEXCEPT;
-
-    /// The socket was accepted (vs. connected).
-    virtual bool inbound() const NOEXCEPT;
-
-    /// The socket upgrades to its secure configuration upon connect.
-    virtual bool secure() const NOEXCEPT;
-
-    /// Stop has been signaled, work is stopping.
-    virtual bool stopped() const NOEXCEPT;
-
-    /// The strand is running in this thread.
-    virtual bool stranded() const NOEXCEPT;
-
-    /// Get the strand of the socket.
-    virtual asio::strand& strand() NOEXCEPT;
-
-    /// Get the network threadpool iocontext.
-    virtual asio::context& service() const NOEXCEPT;
-
-    /// The socket was upgraded to a websocket (requires strand).
-    virtual bool is_websocket() const NOEXCEPT;
 
 protected:
     using ws_t = std::variant<ref<ws::socket>, ref<ws::ssl::socket>>;

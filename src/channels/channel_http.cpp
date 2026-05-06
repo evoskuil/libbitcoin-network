@@ -28,7 +28,6 @@
 namespace libbitcoin {
 namespace network {
 
-#define CLASS channel_http
 #define CASE_REQUEST_TO_MODEL(verb_, request_, model_) \
 case verb::verb_: \
     model_.method = #verb_; \
@@ -65,8 +64,8 @@ void channel_http::resume() NOEXCEPT
 
 // Read cycle.
 // ----------------------------------------------------------------------------
+// Failure to call receive() after successful message handling stalls channel.
 
-// Failure to call after successful message handling causes stalled channel.
 void channel_http::receive() NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -75,16 +74,9 @@ void channel_http::receive() NOEXCEPT
     if (stopped() || paused() || reading_)
         return;
 
-    // TODO: Extend support to batch (array of rpc).
-    // TODO: See notes in channel_rpc.ipp. This is the same except there must
-    // TODO: be an set of socket methods for incremental http-rpc. This can
-    // TODO: be handled by writing the header, whole rpc responses, and close.
-    // TODO: Boost beast provides these independent async calls for chunking.
-
     reading_ = true;
-    const auto in = to_shared<request>();
+    const auto in = create_request();
 
-    // Post handle_read to strand upon stop, error, or buffer full.
     read(request_buffer(), *in,
         std::bind(&channel_http::handle_receive,
             shared_from_base<channel_http>(), _1, _2, in));
@@ -114,8 +106,9 @@ void channel_http::handle_receive(const code& ec, size_t bytes,
         return;
     }
 
-    reading_ = false;
     LOGA(log_message(*request, bytes));
+
+    reading_ = false;
     dispatch(request);
 }
 
@@ -152,9 +145,26 @@ void channel_http::dispatch(const request_cptr& request) NOEXCEPT
         stop(code);
 }
 
+// request helpers
+// ----------------------------------------------------------------------------
+
 flat_buffer& channel_http::request_buffer() NOEXCEPT
 {
     return request_buffer_;
+}
+
+request_ptr channel_http::create_request() const NOEXCEPT
+{
+    const auto out = to_shared<request>();
+    if (websocket())
+    {
+        // out->method() will return verb::unknown (mapped in dispatch).
+        out->method_string("websocket");
+        out->body() = http::json_value{};
+        out->body().plain_json = true;
+    }
+
+    return out;
 }
 
 // Send.
@@ -179,18 +189,24 @@ void channel_http::handle_send(const code& ec, size_t bytes,
     if (ec) stop(ec);
     LOGA(boost::format(message) % bytes);
     handler(ec);
+
+    // Restart the listener (only in response to requests).
+    // TODO: use new ::send(rresponse, handler) method to differentiate.
+    receive();
 }
 
 // private
-void channel_http::assign_json_buffer(response& ) NOEXCEPT
+void channel_http::assign_json_buffer(response& response) NOEXCEPT
 {
-    // TODO: limit to http (not full duplex safe).
-    ////if (const auto& body = response.body();
-    ////    body.contains<json_body::value_type>())
-    ////{
-    ////    auto& value = body.get<json_body::value_type>();
-    ////    value.buffer = response_buffer_;
-    ////}
+    // websocket is full duplex, so cannot use shared json repsonse buffer.
+    if (!websocket())
+    {
+        const auto& body = response.body();
+        if (body.contains<json_body::value_type>())
+            body.get<json_body::value_type>().buffer = response_buffer_;
+        else if (body.contains<rpc::request>())
+            body.get<rpc::request>().buffer = response_buffer_;
+    }
 }
 
 // unauthorized helpers
