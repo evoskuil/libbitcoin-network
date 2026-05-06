@@ -52,14 +52,8 @@ public:
     /// Asserts/logs stopped.
     virtual ~proxy() NOEXCEPT;
 
-    /// Pause reading from the socket (requires strand).
-    virtual void pause() NOEXCEPT;
-
-    /// Resume reading from the socket (requires strand).
-    virtual void resume() NOEXCEPT;
-
-    /// Reading from the socket is paused (requires strand).
-    virtual bool paused() const NOEXCEPT;
+    /// Stop.
+    /// -----------------------------------------------------------------------
 
     /// Idempotent, may be called multiple times.
     /// Stop socket, no delay, called by stop notify when iocontext is closing.
@@ -74,11 +68,26 @@ public:
     void subscribe_stop(result_handler&& handler,
         result_handler&& complete) NOEXCEPT;
 
-    /// The channel strand.
-    asio::strand& strand() NOEXCEPT;
+    /// Pause.
+    /// -----------------------------------------------------------------------
+
+    /// Pause reading from the socket (requires strand).
+    virtual void pause() NOEXCEPT;
+
+    /// Resume reading from the socket (requires strand).
+    virtual void resume() NOEXCEPT;
+
+    /// Reading from the socket is paused (requires strand).
+    virtual bool paused() const NOEXCEPT;
+
+    /// Properties.
+    /// -----------------------------------------------------------------------
 
     /// Get the network threadpool iocontext.
     asio::context& service() const NOEXCEPT;
+
+    /// The channel strand.
+    asio::strand& strand() NOEXCEPT;
 
     /// The strand is running in this thread.
     bool stranded() const NOEXCEPT;
@@ -86,14 +95,17 @@ public:
     /// The proxy (socket) is stopped.
     bool stopped() const NOEXCEPT;
 
+    /// The socket was accepted (vs. connected).
+    bool inbound() const NOEXCEPT;
+
     /// Connection is currently secured (TLS or comparable for socket type).
     bool secure() const NOEXCEPT;
 
+    /// The socket was upgraded to a websocket (requires strand).
+    bool websocket() const NOEXCEPT;
+
     /// The total number of bytes queued/sent to the remote endpoint.
     uint64_t total() const NOEXCEPT;
-
-    /// The socket was accepted (vs. connected).
-    bool inbound() const NOEXCEPT;
 
     /// Get the address of the outgoing endpoint passed via construct.
     const config::address& address() const NOEXCEPT;

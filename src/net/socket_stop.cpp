@@ -54,7 +54,7 @@ void socket::do_stop() NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    if (is_websocket())
+    if (websocket())
     {
         // Release ws control callback handler.
         VARIANT_DISPATCH_METHOD(get_ws(), control_callback());
@@ -87,7 +87,7 @@ void socket::lazy_stop() NOEXCEPT
 void socket::do_ws_stop() NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (!is_websocket())
+    if (!websocket())
     {
         do_ssl_stop();
         return;

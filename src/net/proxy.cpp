@@ -47,11 +47,6 @@ proxy::~proxy() NOEXCEPT
 // ----------------------------------------------------------------------------
 // The proxy does not (must not) stop itself.
 
-bool proxy::stopped() const NOEXCEPT
-{
-    return socket_->stopped();
-}
-
 void proxy::stop(const code& ec) NOEXCEPT
 {
     if (stopped())
@@ -168,14 +163,14 @@ void proxy::do_reading() NOEXCEPT
 // Properties.
 // ----------------------------------------------------------------------------
 
-asio::strand& proxy::strand() NOEXCEPT
-{
-    return socket_->strand();
-}
-
 asio::context& proxy::service() const NOEXCEPT
 {
     return socket_->service();
+}
+
+asio::strand& proxy::strand() NOEXCEPT
+{
+    return socket_->strand();
 }
 
 bool proxy::stranded() const NOEXCEPT
@@ -183,19 +178,29 @@ bool proxy::stranded() const NOEXCEPT
     return socket_->stranded();
 }
 
-bool proxy::secure() const NOEXCEPT
+bool proxy::stopped() const NOEXCEPT
 {
-    return socket_->secure();
-}
-
-uint64_t proxy::total() const NOEXCEPT
-{
-    return total_.load(std::memory_order_relaxed);
+    return socket_->stopped();
 }
 
 bool proxy::inbound() const NOEXCEPT
 {
     return socket_->inbound();
+}
+
+bool proxy::secure() const NOEXCEPT
+{
+    return socket_->secure();
+}
+
+bool proxy::websocket() const NOEXCEPT
+{
+    return socket_->websocket();
+}
+
+uint64_t proxy::total() const NOEXCEPT
+{
+    return total_.load(std::memory_order_relaxed);
 }
 
 const config::address& proxy::address() const NOEXCEPT

@@ -112,7 +112,7 @@ void socket::do_connect(const asio::endpoints& range,
     const result_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    BC_ASSERT_MSG(!is_websocket(), "socket is upgraded");
+    BC_ASSERT_MSG(!websocket(), "socket is upgraded");
     BC_ASSERT_MSG(!std::get<asio::socket>(socket_).is_open(),
         "connect on open socket");
 
