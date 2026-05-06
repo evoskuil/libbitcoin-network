@@ -48,6 +48,7 @@ protected:
     protocol_peer(const session::ptr& session,
         const channel::ptr& channel) NOEXCEPT;
 
+    /// Forwards to channel::send.
     DECLARE_SEND()
     DECLARE_SUBSCRIBE_CHANNEL()
 

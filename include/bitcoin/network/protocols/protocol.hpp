@@ -213,6 +213,11 @@ private:
     inline void send(Message&& message, Method&& method, Args&&... args) NOEXCEPT \
     { channel_->send(std::forward<Message>(message), BIND_SHARED(method, args)); }
 
+#define DECLARE_NOTIFY() \
+    template <class Derived, class Message, typename Method, typename... Args> \
+    inline void notify(Message&& message, Method&& method, Args&&... args) NOEXCEPT \
+    { channel_->notify(std::forward<Message>(message), BIND_SHARED(method, args)); }
+
 #define DECLARE_SUBSCRIBE_CHANNEL() \
     template <class Derived, class Message, typename Method, typename... Args> \
     inline void subscribe_channel(Method&& method, Args&&... args) NOEXCEPT \
@@ -220,6 +225,8 @@ private:
 
 #define SEND(message, method, ...) \
     send<CLASS>(message, &CLASS::method, __VA_ARGS__)
+#define NOTIFY(message, method, ...) \
+    notify<CLASS>(message, &CLASS::method, __VA_ARGS__)
 #define SUBSCRIBE_CHANNEL(message, method, ...) \
     subscribe_channel<CLASS, message>(&CLASS::method, __VA_ARGS__)
 #define SUBSCRIBE_BROADCAST(message, method, ...) \
