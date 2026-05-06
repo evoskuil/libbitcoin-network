@@ -336,9 +336,8 @@ void socket::async_read(http::flat_buffer& buffer,
         }
         else
         {
-            constexpr auto size = rpc::writer::default_buffer;
             VARIANT_DISPATCH_METHOD(get_tcp(),
-                async_read_some(buffer.prepare(size),
+                async_read_some(buffer.prepare(buffer.max_size()),
                     std::bind(&socket::handle_async, shared_from_this(),
                     _1, _2, handler, "async_read_some")));
         }
