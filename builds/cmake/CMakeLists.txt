@@ -99,6 +99,11 @@ if ( !HAS_FLAG_FSTACK-PROTECTOR-ALL )
     message( FATAL_ERROR "Compiler does not support '-fstack-protector-all'." )
 endif()
 
+check_cxx_compiler_flag( "-Wno-uninitialized" HAS_FLAG_WNO-UNINITIALIZED )
+if ( !HAS_FLAG_WNO-UNINITIALIZED )
+    message( FATAL_ERROR "Compiler does not support '-Wno-uninitialized'." )
+endif()
+
 check_cxx_compiler_flag( "-Wno-ignored-attributes" HAS_FLAG_WNO-IGNORED-ATTRIBUTES )
 if ( !HAS_FLAG_WNO-IGNORED-ATTRIBUTES )
     message( FATAL_ERROR "Compiler does not support '-Wno-ignored-attributes'." )
@@ -144,6 +149,7 @@ target_compile_options( libbitcoin-network
     $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-copy>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-mismatched-tags>
     -fstack-protector-all
+    -Wno-uninitialized
 )
 
 target_compile_definitions( libbitcoin-network
@@ -251,6 +257,7 @@ if ( with-tests )
       $<$<COMPILE_LANGUAGE:CXX>:-Wno-long-long>
       $<$<CXX_COMPILER_ID:GNU>:-fno-var-tracking-assignments>
       -fstack-protector-all
+      -Wno-uninitialized
   )
 
   target_compile_definitions( libbitcoin-network-test
