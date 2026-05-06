@@ -218,7 +218,6 @@ protected:
         const config::address& address, const config::endpoint& endpoint,
         bool proxied, bool inbound) NOEXCEPT;
 
-
     /// Context.
     /// -----------------------------------------------------------------------
 
