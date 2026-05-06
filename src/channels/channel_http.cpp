@@ -189,6 +189,10 @@ void channel_http::handle_send(const code& ec, size_t bytes,
     if (ec) stop(ec);
     LOGA(boost::format(message) % bytes);
     handler(ec);
+
+    // Restart the listener (only in response to requests).
+    // TODO: use new ::send(rresponse, handler) method to differentiate.
+    receive();
 }
 
 // private

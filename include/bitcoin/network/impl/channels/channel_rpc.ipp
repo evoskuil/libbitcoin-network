@@ -194,7 +194,7 @@ inline void CLASS::handle_send(const code& ec, size_t bytes,
     // Typically a noop, but handshake may pause channel here.
     handler(ec);
 
-    // Restart the listener (following response to request only).
+    // Restart the listener (only in response to requests).
     if constexpr (is_same_type<Message, rpc::response_t>)
     {
         receive();
