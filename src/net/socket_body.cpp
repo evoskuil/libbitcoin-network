@@ -166,8 +166,7 @@ void socket::do_body_write(boost_code ec, size_t total,
     out->more = buffer.value().second;
     const auto& data = buffer.value().first;
 
-    // TODO: derive websocket binary/text from body type mapping.
-    async_write(data, false,
+    async_write(data, out->writer.binary(),
         std::bind(&socket::handle_body_write,
             shared_from_this(), _1, _2, total, out, handler));
 }

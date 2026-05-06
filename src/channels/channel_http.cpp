@@ -115,7 +115,7 @@ void channel_http::handle_receive(const code& ec, size_t bytes,
     }
 
     reading_ = false;
-    log_message(*request, bytes);
+    LOGA(log_message(*request, bytes));
     dispatch(request);
 }
 
@@ -165,45 +165,38 @@ void channel_http::send(response&& response, result_handler&& handler) NOEXCEPT
     BC_ASSERT(stranded());
 
     assign_json_buffer(response);
-    const auto out = system::move_shared(std::move(response));
-    count_handler complete = std::bind(&channel_http::handle_send,
-        shared_from_base<channel_http>(), _1, _2, out, std::move(handler));
+    auto message = log_message(response);
 
-    if (!out)
-    {
-        complete(error::bad_alloc, {});
-        return;
-    }
-
-    // response has been moved to out.
-    write(*out, std::move(complete));
+    write(std::move(response),
+        std::bind(&channel_http::handle_send,
+            shared_from_base<channel_http>(), _1, _2, std::move(message),
+                std::move(handler)));
 }
 
 void channel_http::handle_send(const code& ec, size_t bytes,
-    const response_cptr& response, const result_handler& handler) NOEXCEPT
+    const std::string& message, const result_handler& handler) NOEXCEPT
 {
-    if (ec)
-        stop(ec);
-
-    log_message(*response, bytes);
+    if (ec) stop(ec);
+    LOGA(boost::format(message) % bytes);
     handler(ec);
 }
 
 // private
-void channel_http::assign_json_buffer(response& response) NOEXCEPT
+void channel_http::assign_json_buffer(response& ) NOEXCEPT
 {
-    if (const auto& body = response.body();
-        body.contains<json_body::value_type>())
-    {
-        auto& value = body.get<json_body::value_type>();
-        value.buffer = response_buffer_;
-    }
+    // TODO: limit to http (not full duplex safe).
+    ////if (const auto& body = response.body();
+    ////    body.contains<json_body::value_type>())
+    ////{
+    ////    auto& value = body.get<json_body::value_type>();
+    ////    value.buffer = response_buffer_;
+    ////}
 }
 
 // unauthorized helpers
 // ----------------------------------------------------------------------------
 
-bool channel_http::unauthorized(const http::request& request) NOEXCEPT
+bool channel_http::unauthorized(const request& request) NOEXCEPT
 {
     return options_.authorize() &&
         (options_.credential() != request[field::authorization]);
@@ -218,35 +211,34 @@ void channel_http::handle_unauthorized(const code& ec) NOEXCEPT
 // log helpers
 // ----------------------------------------------------------------------------
 
-void channel_http::log_message(const request& LOG_ONLY(request),
-    size_t LOG_ONLY(bytes)) const NOEXCEPT
+std::string channel_http::log_message(const request& request,
+    size_t bytes) const NOEXCEPT
 {
-    LOG_ONLY(const auto scheme = secure() ? "https" : "http";)
-    LOG_ONLY(const auto version = "http/" + serialize(request.version() / 10) +
-        "." + serialize(request.version() % 10);)
+    const std::string scheme = secure() ? "https" : "http";
+    const std::string method = request.method_string();
+    const std::string keep = request.keep_alive() ? "keep" : "drop";
+    const std::string size = request.chunked() ? "c" : serialize(bytes);
+    const std::string accept = split(request[field::accept], ",").front();
+    const std::string version = "http/" + serialize(request.version() / 10) +
+        "." + serialize(request.version() % 10);
 
-    LOGA(scheme << " [" << request.method_string()
-        << "] " << version
-        << " (" << (request.chunked() ? "c" : serialize(bytes))
-        << ") " << (request.keep_alive() ? "keep" : "drop")
-        << " [" << endpoint() << "]"
-        << " {" << (split(request[field::accept], ",").front()) << "...}"
-        << " "  << request.target());
+    return scheme + " [" + method + "] " + version + " (" + size + ") " +
+        keep + " [" + endpoint().to_string() + "] " +
+        "{" + accept + "...} " + std::string(request.target());
 }
 
-void channel_http::log_message(const response& LOG_ONLY(response),
-    size_t LOG_ONLY(bytes)) const NOEXCEPT
+std::string channel_http::log_message(const response& response) const NOEXCEPT
 {
-    LOG_ONLY(const auto scheme = secure() ? "https" : "http";)
-    LOG_ONLY(const auto version = "http/" + serialize(response.version() / 10)
-        + "." + serialize(response.version() % 10);)
+    const std::string scheme = secure() ? "https" : "http";
+    const std::string status = status_string(response.result());
+    const std::string keep = response.keep_alive() ? "keep" : "drop";
+    const std::string version = "http/" + serialize(response.version() / 10) +
+        "." + serialize(response.version() % 10);
 
-    LOGA(scheme << " [" << status_string(response.result())
-        << "] " << version
-        << " (" << (response.chunked() ? "c" : serialize(bytes))
-        << ") " << (response.keep_alive() ? "keep" : "drop")
-        << " [" << endpoint() << "]"
-        << " {" << (response[field::content_type]) << "}");
+    // %1% is required placeholder for response size (filled by caller).
+    return scheme + " [" + status + "] " + version + " (%1%) " +
+        keep + " [" + endpoint().to_string() + "] " +
+        "{" + std::string(response[field::content_type]) + "}";
 }
 
 BC_POP_WARNING()

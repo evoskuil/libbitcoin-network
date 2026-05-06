@@ -259,6 +259,23 @@ struct BCT_API body
         {
         }
 
+        inline bool binary() const NOEXCEPT
+        {
+            return std::visit(overload
+            {
+                [&](const std::monostate&) NOEXCEPT { return false; },
+                [&](const empty_writer&)   NOEXCEPT { return false; },
+                [&](const data_writer&)    NOEXCEPT { return true; },
+                [&](const file_writer&)    NOEXCEPT { return true; },
+                [&](const span_writer&)    NOEXCEPT { return true; },
+                [&](const buffer_writer&)  NOEXCEPT { return true; },
+                [&](const string_writer&)  NOEXCEPT { return false; },
+                [&](const json_writer&)    NOEXCEPT { return false; },
+                [&](const rpc::writer&)    NOEXCEPT { return false; },
+                [&](const rpc::notifier&)  NOEXCEPT { return false; }
+            }, writer_);
+        }
+
         void init(boost_code& ec) NOEXCEPT;
         out_buffer get(boost_code& ec) NOEXCEPT;
 

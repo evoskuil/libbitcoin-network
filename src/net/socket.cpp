@@ -124,6 +124,13 @@ asio::context& socket::service() const NOEXCEPT
     return service_;
 }
 
+bool socket::is_websocket() const NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    return std::holds_alternative<ws::socket>(socket_) ||
+        std::holds_alternative<ws::ssl::socket>(socket_);
+}
+
 // Context.
 // ----------------------------------------------------------------------------
 // protected
@@ -138,13 +145,6 @@ bool socket::is_secure() const NOEXCEPT
 {
     BC_ASSERT(stranded());
     return std::holds_alternative<asio::ssl::socket>(socket_) ||
-        std::holds_alternative<ws::ssl::socket>(socket_);
-}
-
-bool socket::is_websocket() const NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    return std::holds_alternative<ws::socket>(socket_) ||
         std::holds_alternative<ws::ssl::socket>(socket_);
 }
 
@@ -336,9 +336,8 @@ void socket::async_read(http::flat_buffer& buffer,
         }
         else
         {
-            constexpr auto size = rpc::writer::default_buffer;
             VARIANT_DISPATCH_METHOD(get_tcp(),
-                async_read_some(buffer.prepare(size),
+                async_read_some(buffer.prepare(buffer.max_size()),
                     std::bind(&socket::handle_async, shared_from_this(),
                     _1, _2, handler, "async_read_some")));
         }
@@ -376,28 +375,73 @@ void socket::async_read(const asio::mutable_buffer& buffer,
     }
 }
 
-// private
-void socket::handle_async_read(const boost_code& ec, size_t size,
-    const asio::mutable_buffer& buffer, const http::flat_buffer_ptr& flat,
+void socket::async_read_http(http::flat_buffer& buffer, http::request& request,
     const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    if (ec)
+    try
     {
-        handler(error::ws_to_error_code(ec), size);
-        return;
-    }
+        if (is_websocket())
+        {
+            // The body reader processes a websocket read just like a
+            // beast::http::async_read but without the headers. The expected
+            // body type (parser) must be preselected on the request object.
+            body_read(buffer, request, move_copy(handler));
+        }
+        else
+        {
+            // Explicit parser override gives access to limits.
+            auto parser = to_shared<http_parser>();
+            parser->body_limit(maximum_);
+            parser->header_limit(limit<uint32_t>(maximum_));
 
-    if (size != buffer.size())
+            VARIANT_DISPATCH_FUNCTION(boost::beast::http::async_read,
+                get_tcp(), buffer, *parser,
+                std::bind(&socket::handle_http_read,
+                    shared_from_this(), _1, _2, std::ref(request), parser,
+                    handler));
+        }
+    }
+    catch (const std::exception& e)
     {
-        handler(error::bad_size, size);
-        return;
+        LOGF("Exception @ async_read_http: " << e.what());
+        handler(error::operation_failed, {});
     }
-
-    std::memcpy(buffer.data(), flat->data().data(), size);
-    handler(error::success, size);
 }
+
+void socket::async_write_http(http::response&& response,
+    const count_handler& handler) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    try
+    {
+        if (is_websocket())
+        {
+            // The body writer processes a websocket write just like a
+            // beast::http::async_write but without the headers. The expected
+            // body type (serializer) is determined by caller-assigned body.
+            body_write(std::move(response), move_copy(handler));
+        }
+        else
+        {
+            const auto out = move_shared(std::move(response));
+            VARIANT_DISPATCH_FUNCTION(boost::beast::http::async_write,
+                get_tcp(), *out,
+                std::bind(&socket::handle_http_write,
+                    shared_from_this(), _1, _2, out, handler));
+        }
+    }
+    catch (const std::exception& e)
+    {
+        LOGF("Exception @ async_write_http: " << e.what());
+        handler(error::operation_failed, {});
+    }
+}
+
+// Handlers.
+// ----------------------------------------------------------------------------
 
 // private
 void socket::handle_async(const boost_code& ec, size_t size,

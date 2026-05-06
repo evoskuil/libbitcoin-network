@@ -32,14 +32,13 @@ namespace network {
     
 using namespace system;
 using namespace std::placeholders;
-namespace beast = boost::beast;
 
 // Shared pointers required in handler parameters so closures control lifetime.
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// HTTP (read).
+// HTTP/WS (read).
 // ----------------------------------------------------------------------------
 
 void socket::http_read(http::flat_buffer& buffer,
@@ -56,34 +55,7 @@ void socket::do_http_read(ref<http::flat_buffer> buffer,
     const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
-    if (is_websocket())
-    {
-        handler(error::service_stopped, {});
-        return;
-    }
-
-    try
-    {
-        // Explicit parser override gives access to limits.
-        auto parser = to_shared<http_parser>();
-
-        // Causes http::error::body_limit on completion.
-        parser->body_limit(maximum_);
-
-        // Causes http::error::header_limit on completion.
-        parser->header_limit(limit<uint32_t>(maximum_));
-
-        VARIANT_DISPATCH_FUNCTION(beast::http::async_read,
-            get_tcp(), buffer.get(), *parser,
-                std::bind(&socket::handle_http_read,
-                    shared_from_this(), _1, _2, request, parser, handler));
-    }
-    catch (const std::exception& e)
-    {
-        LOGF("Exception @ do_http_read: " << e.what());
-        handler(error::operation_failed, {});
-    }
+    async_read_http(buffer.get(), request.get(), handler);
 }
 
 // private
@@ -99,7 +71,7 @@ void socket::handle_http_read(const boost_code& ec, size_t size,
         return;
     }
 
-    if (!ec && beast::websocket::is_upgrade(parser->get()))
+    if (!ec && boost::beast::websocket::is_upgrade(parser->get()))
     {
         handler(set_websocket(parser->get()), size);
         return;
@@ -115,46 +87,29 @@ void socket::handle_http_read(const boost_code& ec, size_t size,
     handler(code, size);
 }
 
-// HTTP (write).
+// HTTP/WS (write).
 // ----------------------------------------------------------------------------
 
-void socket::http_write(http::response& response,
+void socket::http_write(http::response&& response,
     count_handler&& handler) NOEXCEPT
 {
+    const auto out = move_shared(std::move(response));
     boost::asio::dispatch(strand_,
         std::bind(&socket::do_http_write, shared_from_this(),
-            std::ref(response), std::move(handler)));
+            out, std::move(handler)));
 }
 
 // private
-void socket::do_http_write(const ref<http::response>& response,
+void socket::do_http_write(const http::response_ptr& response,
     const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
-
-    if (is_websocket())
-    {
-        handler(error::service_stopped, {});
-        return;
-    }
-
-    try
-    {
-        VARIANT_DISPATCH_FUNCTION(beast::http::async_write,
-            get_tcp(), response.get(),
-                std::bind(&socket::handle_http_write,
-                    shared_from_this(), _1, _2, handler));
-    }
-    catch (const std::exception& e)
-    {
-        LOGF("Exception @ do_http_write: " << e.what());
-        handler(error::operation_failed, {});
-    }
+    async_write_http(std::move(*response), handler);
 }
 
 // private
 void socket::handle_http_write(const boost_code& ec, size_t size,
-    const count_handler& handler) NOEXCEPT
+    const http::response_ptr&, const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
