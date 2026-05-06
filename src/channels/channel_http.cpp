@@ -65,8 +65,8 @@ void channel_http::resume() NOEXCEPT
 
 // Read cycle.
 // ----------------------------------------------------------------------------
+// Failure to call receive() after successful message handling stalls channel.
 
-// Failure to call after successful message handling causes stalled channel.
 void channel_http::receive() NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -75,16 +75,9 @@ void channel_http::receive() NOEXCEPT
     if (stopped() || paused() || reading_)
         return;
 
-    // TODO: Extend support to batch (array of rpc).
-    // TODO: See notes in channel_rpc.ipp. This is the same except there must
-    // TODO: be an set of socket methods for incremental http-rpc. This can
-    // TODO: be handled by writing the header, whole rpc responses, and close.
-    // TODO: Boost beast provides these independent async calls for chunking.
-
     reading_ = true;
     const auto in = to_shared<request>();
 
-    // Post handle_read to strand upon stop, error, or buffer full.
     read(request_buffer(), *in,
         std::bind(&channel_http::handle_receive,
             shared_from_base<channel_http>(), _1, _2, in));
@@ -114,8 +107,9 @@ void channel_http::handle_receive(const code& ec, size_t bytes,
         return;
     }
 
-    reading_ = false;
     LOGA(log_message(*request, bytes));
+
+    reading_ = false;
     dispatch(request);
 }
 
