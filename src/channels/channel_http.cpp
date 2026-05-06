@@ -28,7 +28,6 @@
 namespace libbitcoin {
 namespace network {
 
-#define CLASS channel_http
 #define CASE_REQUEST_TO_MODEL(verb_, request_, model_) \
 case verb::verb_: \
     model_.method = #verb_; \
@@ -76,7 +75,7 @@ void channel_http::receive() NOEXCEPT
         return;
 
     reading_ = true;
-    const auto in = to_shared<request>();
+    const auto in = create_request();
 
     read(request_buffer(), *in,
         std::bind(&channel_http::handle_receive,
@@ -146,9 +145,26 @@ void channel_http::dispatch(const request_cptr& request) NOEXCEPT
         stop(code);
 }
 
+// request helpers
+// ----------------------------------------------------------------------------
+
 flat_buffer& channel_http::request_buffer() NOEXCEPT
 {
     return request_buffer_;
+}
+
+request_ptr channel_http::create_request() const NOEXCEPT
+{
+    const auto out = to_shared<request>();
+    if (websocket())
+    {
+        // out->method() will return verb::unknown (mapped in dispatch).
+        out->method_string("websocket");
+        out->body() = http::json_value{};
+        out->body().plain_json = true;
+    }
+
+    return out;
 }
 
 // Send.

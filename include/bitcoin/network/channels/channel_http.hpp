@@ -80,6 +80,9 @@ protected:
     /// Read request buffer (requires strand).
     virtual http::flat_buffer& request_buffer() NOEXCEPT;
 
+    /// Override to change default websocket reader expectation/config.
+    virtual http::request_ptr create_request() const NOEXCEPT;
+
     /// Determine if http basic authorization is satisfied if enabled.
     virtual bool unauthorized(const http::request& request) NOEXCEPT;
 
