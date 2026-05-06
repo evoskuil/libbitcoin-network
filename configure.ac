@@ -209,6 +209,12 @@ AS_CASE([${CC}], [*],
     [AX_CHECK_COMPILE_FLAG([-Wno-deprecated-copy],
         [CXXFLAGS="$CXXFLAGS -Wno-deprecated-copy"])])
 
+# Suppresses warnings related ot the use of uninitialized variables.
+#------------------------------------------------------------------------------
+AS_CASE([${CC}], [*],
+    [AX_CHECK_COMPILE_FLAG([-Wno-uninitialized],
+        [CXXFLAGS="$CXXFLAGS -Wno-uninitialized"])])
+
 # Conflict in stdlib under clang. Enabled in clang only.
 #------------------------------------------------------------------------------
 AS_CASE([${CC}], [*clang*],
