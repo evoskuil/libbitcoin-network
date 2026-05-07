@@ -150,11 +150,14 @@ void channel_http::dispatch(const request_cptr& request) NOEXCEPT
 
 flat_buffer& channel_http::request_buffer() NOEXCEPT
 {
+    BC_ASSERT(stranded());
     return request_buffer_;
 }
 
 request_ptr channel_http::create_request() const NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     const auto out = to_shared<request>();
     if (websocket())
     {
@@ -200,6 +203,8 @@ void channel_http::notify(response&& notification,
 void channel_http::handle_send(const code& ec, size_t bytes, bool notification,
     const std::string& message, const result_handler& handler) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     if (ec) stop(ec);
     LOGA(boost::format(message) % bytes);
     handler(ec);
@@ -212,6 +217,8 @@ void channel_http::handle_send(const code& ec, size_t bytes, bool notification,
 // private
 void channel_http::assign_json_buffer(response& response) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     // websocket is full duplex, so cannot use shared json repsonse buffer.
     if (!websocket())
     {

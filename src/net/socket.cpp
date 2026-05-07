@@ -298,6 +298,8 @@ void socket::async_write(const asio::const_buffer& buffer, bool binary,
 void socket::async_read_some(const asio::mutable_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     try
     {
         if (websocket())
@@ -325,6 +327,8 @@ void socket::async_read_some(const asio::mutable_buffer& buffer,
 void socket::async_read(http::flat_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     try
     {
         if (websocket())
@@ -353,6 +357,8 @@ void socket::async_read(http::flat_buffer& buffer,
 void socket::async_read(const asio::mutable_buffer& buffer,
     const count_handler& handler) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
     try
     {
         if (websocket())
