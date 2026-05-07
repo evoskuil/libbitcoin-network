@@ -340,8 +340,15 @@ void socket::async_read(http::flat_buffer& buffer,
         }
         else
         {
+            auto remain = floored_subtract(buffer.max_size(), buffer.size());
+            if (is_zero(remain))
+            {
+                handler(error::buffer_overflow, {});
+                return;
+            }
+
             VARIANT_DISPATCH_METHOD(get_tcp(),
-                async_read_some(buffer.prepare(buffer.max_size()),
+                async_read_some(buffer.prepare(remain),
                     std::bind(&socket::handle_async, shared_from_this(),
                     _1, _2, handler, "async_read_some")));
         }
