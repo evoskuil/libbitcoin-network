@@ -416,14 +416,16 @@ protected:
 
 typedef std::function<void(const code&, const socket::ptr&)> socket_handler;
 
+// Should not be noexcept.
 #define VARIANT_DISPATCH_METHOD(object, method) \
-std::visit([&](auto&& value) NOEXCEPT \
+std::visit([&](auto&& value) \
 { \
     value.get().method; \
 }, object)
 
+// Should not be noexcept.
 #define VARIANT_DISPATCH_FUNCTION(function, object, ...) \
-std::visit([&](auto&& value) NOEXCEPT \
+std::visit([&](auto&& value) \
 { \
     function(value.get(), __VA_ARGS__); \
 }, object)
