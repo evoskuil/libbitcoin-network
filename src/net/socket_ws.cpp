@@ -134,9 +134,9 @@ code socket::set_websocket(const http::request& request) NOEXCEPT
     {
         if (secure())
         {
-            // Upgrade to ws::ssl::socket.
-            socket_.emplace<ws::ssl::socket>(
-                std::move(std::get<asio::ssl::socket>(socket_)));
+            // Extract before emplacing back to same variant.
+            auto ws = std::move(std::get<asio::ssl::socket>(socket_));
+            socket_.emplace<ws::ssl::socket>(std::move(ws));
 
             auto& sock = std::get<ws::ssl::socket>(socket_);
             sock.read_message_max(maximum_);
@@ -154,9 +154,9 @@ code socket::set_websocket(const http::request& request) NOEXCEPT
         }
         else
         {
-            // Upgrade to ws::socket.
-            socket_.emplace<ws::socket>(
-                std::move(std::get<asio::socket>(socket_)));
+            // Extract before emplacing back to same variant.
+            auto ws = std::move(std::get<asio::socket>(socket_));
+            socket_.emplace<ws::socket>(std::move(ws));
 
             auto& sock = std::get<ws::socket>(socket_);
             sock.read_message_max(maximum_);
