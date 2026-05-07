@@ -104,9 +104,9 @@ protected:
 
 private:
     void handle_unauthorized(const code& ec) NOEXCEPT;
-    static std::string log_message(const http::response& response) NOEXCEPT;
-    static std::string log_message(const http::request& request,
-        size_t bytes) NOEXCEPT;
+    std::string log_message(const http::response& response) const NOEXCEPT;
+    std::string log_message(const http::request& request,
+        size_t bytes) const NOEXCEPT;
 
     // This is thread safe.
     const options_t& options_;

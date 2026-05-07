@@ -247,10 +247,9 @@ void channel_http::handle_unauthorized(const code& ec) NOEXCEPT
 
 // log helpers
 // ----------------------------------------------------------------------------
-// static
 
 std::string channel_http::log_message(const request& request,
-    size_t bytes) NOEXCEPT
+    size_t bytes) const NOEXCEPT
 {
     const std::string scheme = secure() ? "https" : "http";
     const std::string method = request.method_string();
@@ -265,7 +264,7 @@ std::string channel_http::log_message(const request& request,
         "{" + accept + "...} " + std::string(request.target());
 }
 
-std::string channel_http::log_message(const response& response) NOEXCEPT
+std::string channel_http::log_message(const response& response) const NOEXCEPT
 {
     const std::string scheme = secure() ? "https" : "http";
     const std::string status = status_string(response.result());
