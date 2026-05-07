@@ -207,9 +207,9 @@ CLASS::writer::get(boost_code& ec) NOEXCEPT
     try
     {
         // Always prepares the configured max_size.
-        const auto buffer = value_.buffer->prepare(size);
-        const auto data = system::pointer_cast<char>(buffer.data());
-        const auto view = serializer_.read(data, buffer.size());
+        const auto scratch = value_.buffer->prepare(size);
+        const auto data = system::pointer_cast<char>(scratch.data());
+        const auto view = serializer_.read(data, scratch.size());
 
         // No progress (edge case).
         if (view.empty() && !serializer_.done())
@@ -219,8 +219,7 @@ CLASS::writer::get(boost_code& ec) NOEXCEPT
         }
 
         ec.clear();
-        value_.buffer->commit(view.size());
-        value_.buffer->consume(view.size());
+        value_.buffer->consume(scratch.size());
         const auto more = !serializer_.done();
         return out_buffer{ std::make_pair(boost::asio::buffer(view), more) };
     }
