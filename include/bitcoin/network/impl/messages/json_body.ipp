@@ -99,25 +99,29 @@ size_t CLASS::reader::put(const buffer_type& buffer, boost_code& ec) NOEXCEPT
     return {};
 }
 
+// Finishing can be very confusing. The derived rpc body calls this base
+// method, and then the virtual done() is tested to determine whether the
+// logical object is fully read (including optionally required terminator).
+// Any error code here signals the beast reader (and any reader that terminates
+// based on the end of the framed data, such as websockets) that the parse has
+// failed (terminal error). However for custom stream readers that may not be
+// aware of byte termination, the `need_more` implies that the parse has not
+// failed and that more bytes may be parsed. In either case, when this is
+// called and the parse is complete, then the parsed json object is moved to
+// the model and the parser is released. In the case of the derived json-rpc
+// reader, the json is also then converted to the rpc model if valid, otherwise
+// returning a failure code. In no case is the underlying parser_.finish(ec)
+// ever called, as that would preclude use in the unbounded scenario.
 TEMPLATE
 void CLASS::reader::finish(boost_code& ec) NOEXCEPT
 {
-    // Finishing can be very confusing. The derived rpc body calls this base
-    // method, and then the virtual done() is tested to determine whether the
-    // logical object is fully read (including optionally required terminator).
-    // Any error code here signals the beast reader (and any reader that
-    // terminates based on the end of the framed data, such as websockets) that
-    // the parse has failed (terminal error). However for custom stream readers
-    // that may not be aware of byte termination, the `need_more` implies that
-    // the parse has not failed and that more bytes may be parsed. In either
-    // case, when this is called and the parse is complete, then the parsed
-    // json object is moved to the model and the parser is released. In the
-    // case of the derived json-rpc reader, the json is also then converted to
-    // the rpc model if valid, otherwise returning a failure code. In no case
-    // is the underlying parser_.finish(ec) ever called, as that would preclude
-    // use in the unbounded scenario.
-
     using namespace network::error;
+
+    // The internal boost::json parser will always return !done() when parsing
+    // a top-level primitive as a whole document, specifically a number number
+    // value, because it has no way to know if more digits are coming. So this
+    // will return need_more even when a fixed-size buffer is being read. For
+    // this reason this body does not support *reading* for top-level objects.
     if (!done())
     {
         ec = to_http_code(http_error_t::need_more);
@@ -203,9 +207,9 @@ CLASS::writer::get(boost_code& ec) NOEXCEPT
     try
     {
         // Always prepares the configured max_size.
-        const auto buffer = value_.buffer->prepare(size);
-        const auto data = system::pointer_cast<char>(buffer.data());
-        const auto view = serializer_.read(data, buffer.size());
+        const auto scratch = value_.buffer->prepare(size);
+        const auto data = system::pointer_cast<char>(scratch.data());
+        const auto view = serializer_.read(data, scratch.size());
 
         // No progress (edge case).
         if (view.empty() && !serializer_.done())
@@ -215,8 +219,7 @@ CLASS::writer::get(boost_code& ec) NOEXCEPT
         }
 
         ec.clear();
-        value_.buffer->commit(view.size());
-        value_.buffer->consume(view.size());
+        value_.buffer->consume(scratch.size());
         const auto more = !serializer_.done();
         return out_buffer{ std::make_pair(boost::asio::buffer(view), more) };
     }

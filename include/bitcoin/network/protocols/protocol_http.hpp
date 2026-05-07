@@ -52,7 +52,9 @@ protected:
     protocol_http(const session::ptr& session, const channel::ptr& channel,
         const options_t& options) NOEXCEPT;
 
+    /// Forwards to channel::send.
     DECLARE_SEND()
+    DECLARE_NOTIFY()
     DECLARE_SUBSCRIBE_CHANNEL()
 
     /// Message handlers by http method.

@@ -50,6 +50,7 @@ void proxy::cancel(result_handler&& handler) NOEXCEPT
 //  WS (generic, framed).
 // ----------------------------------------------------------------------------
 
+// flat_buffer must have configured max_size, which will be allocated.
 void proxy::read(http::flat_buffer& out, count_handler&& handler) NOEXCEPT
 {
     do_reading();
@@ -109,6 +110,7 @@ void proxy::do_tcp_write(const asio::const_buffer& payload,
 // RPC (TCP: electrum/stratum_v1, WS: btcd).
 // ----------------------------------------------------------------------------
 
+// flat_buffer must have configured max_size, which will be allocated.
 void proxy::read(http::flat_buffer& buffer, rpc::request& request,
     count_handler&& handler) NOEXCEPT
 {
@@ -161,7 +163,7 @@ void proxy::do_notification_write(const rpc::request_ptr& notification,
 // HTTP/WS (generic/rpc).
 // ----------------------------------------------------------------------------
 
-// Method reading() is invoked directly if read() is called from strand().
+// flat_buffer must have configured max_size, which will be allocated.
 void proxy::read(http::flat_buffer& buffer, http::request& request,
     count_handler&& handler) NOEXCEPT
 {
