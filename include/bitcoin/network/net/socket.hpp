@@ -384,7 +384,7 @@ private:
         const notify_state::ptr& out, const count_handler& handler) NOEXCEPT;
 
     // http/ws (native/rpc)
-    void handle_http_read(const boost_code& ec, size_t size,
+    void handle_http_read(boost_code ec, size_t size,
         const ref<http::request>& request, const http_parser_ptr& parser,
         const count_handler& handler) NOEXCEPT;
     void handle_http_write(const boost_code& ec, size_t size,
