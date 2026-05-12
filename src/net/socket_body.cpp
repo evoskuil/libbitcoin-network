@@ -72,6 +72,39 @@ void socket::do_body_read(boost_code ec, size_t total,
         return;
     }
 
+    // Parse data in the buffer.
+    in->buffer.consume(in->reader.put(in->buffer.data(), ec));
+
+    if (!ec)
+    {
+        // The json/json-rpc readers do not finalize on finish, instead
+        // they return need_more if not complete and success if complete.
+        in->reader.finish(ec);
+
+        if (!ec)
+        {
+            handler(error::success, total);
+            return;
+        }
+
+        if (ec == error::http_error_t::need_more)
+            ec.clear();
+    }
+
+    if (ec)
+    {
+        const auto code = error::http_to_error_code(ec);
+        if (code == error::unknown) logx("body-read", ec);
+        handler(code, total);
+        return;
+    }
+
+    if (total > maximum_)
+    {
+        handler(error::message_overflow, total);
+        return;
+    }
+
     // This reader is designed to accept native beast bodies, which require the
     // buffer size to be known so that finish() is called only after all data
     // is passed. For websockets this reads a full logical message into the
@@ -102,29 +135,14 @@ void socket::handle_body_read(boost_code ec, size_t size, size_t total,
         return;
     }
 
-    if (!ec)
+    if (ec)
     {
-        in->buffer.commit(size);
-        in->buffer.consume(in->reader.put(in->buffer.data(), ec));
-        if (!ec)
-        {
-            // The json/json-rpc readers do not finalize on finish, instead
-            // they return need_more if not complete and success if complete.
-            in->reader.finish(ec);
-
-            if (!ec)
-            {
-                handler(error::success, total);
-                return;
-            }
-
-            if (ec == error::http_error_t::need_more)
-                ec.clear();
-        }
+        do_body_read(ec, total, in, handler);
+        return;
     }
 
-    // Handle error condition or incomplete message.
-    do_body_read(ec, total, in, handler);
+    in->buffer.commit(size);
+    do_body_read({}, total, in, handler);
 }
 
 // Body (write).
