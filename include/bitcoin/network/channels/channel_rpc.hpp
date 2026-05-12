@@ -91,7 +91,7 @@ protected:
     virtual inline http::flat_buffer& request_buffer() NOEXCEPT;
 
     /// Override to change default reader config.
-    virtual rpc::request_ptr create_request() const NOEXCEPT;
+    virtual inline rpc::request_ptr create_request() const NOEXCEPT;
 
     /// Override to dispatch request to subscribers by requested method.
     virtual inline void dispatch(const rpc::request_cptr& request) NOEXCEPT;
