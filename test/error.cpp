@@ -814,15 +814,15 @@ BOOST_AUTO_TEST_CASE(error_t__code__method_not_allowed__true_expected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "method not allowed");
 }
 
-////BOOST_AUTO_TEST_CASE(error_t__code__not_acceptable__true_expected_message)
-////{
-////    constexpr auto value = error::not_acceptable;
-////    const auto ec = code(value);
-////    BOOST_REQUIRE(ec);
-////    BOOST_REQUIRE(ec == value);
-////    BOOST_REQUIRE_EQUAL(ec.message(), "not acceptable");
-////}
-////
+BOOST_AUTO_TEST_CASE(error_t__code__not_acceptable__true_expected_message)
+{
+    constexpr auto value = error::not_acceptable;
+    const auto ec = code(value);
+    BOOST_REQUIRE(ec);
+    BOOST_REQUIRE(ec == value);
+    BOOST_REQUIRE_EQUAL(ec.message(), "not acceptable");
+}
+
 ////BOOST_AUTO_TEST_CASE(error_t__code__proxy_authentication_required__true_expected_message)
 ////{
 ////    constexpr auto value = error::proxy_authentication_required;
