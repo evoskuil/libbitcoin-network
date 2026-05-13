@@ -93,6 +93,14 @@ void channel_http::handle_receive(const code& ec, size_t bytes,
         return;
     }
 
+    if (ec == error::upgraded)
+    {
+        // Don't dispatch the upgrade request, just restart the reader.
+        reading_ = false;
+        receive();
+        return;
+    }
+
     if (ec)
     {
         // Don't log common conditions.
