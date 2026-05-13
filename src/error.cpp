@@ -141,7 +141,7 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
     { forbidden, "forbidden" },
     { not_found, "not found" },
     { method_not_allowed, "method not allowed" },
-    ////{ not_acceptable, "not acceptable" },
+    { not_acceptable, "not acceptable" },
     ////{ proxy_authentication_required, "proxy authentication required" },
     ////{ request_timeout, "request timeout" },
     ////{ conflict, "conflict" },

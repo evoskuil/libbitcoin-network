@@ -154,7 +154,7 @@ enum error_t : uint8_t
     forbidden,
     not_found,
     method_not_allowed,
-    ////not_acceptable,
+    not_acceptable,
     ////proxy_authentication_required,
     ////request_timeout,
     ////conflict,

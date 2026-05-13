@@ -93,6 +93,14 @@ void channel_http::handle_receive(const code& ec, size_t bytes,
         return;
     }
 
+    if (ec == error::upgraded)
+    {
+        // Don't dispatch the upgrade request, just restart the reader.
+        reading_ = false;
+        receive();
+        return;
+    }
+
     if (ec)
     {
         // Don't log common conditions.
@@ -154,6 +162,15 @@ flat_buffer& channel_http::request_buffer() NOEXCEPT
     return request_buffer_;
 }
 
+body::value_type channel_http::websocket_body() const NOEXCEPT
+{
+    // There is no forwarding constructor so assign and move.
+    body::value_type value{};
+    value = json_value{};
+    return value;
+}
+
+// private
 request_ptr channel_http::create_request() const NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -162,9 +179,10 @@ request_ptr channel_http::create_request() const NOEXCEPT
     if (websocket())
     {
         // out->method() will return verb::unknown (mapped in dispatch).
+        // socket will not produce verb::unknown for http requests (blocked). 
+        // plain_json value is not necessary since reader is explicitly set.
         out->method_string("websocket");
-        out->body() = http::json_value{};
-        out->body().plain_json = true;
+        out->body() = websocket_body();
     }
 
     return out;

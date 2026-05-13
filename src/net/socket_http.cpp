@@ -80,6 +80,13 @@ void socket::handle_http_read(const boost_code& ec, size_t size,
     if (!ec)
     {
         request.get() = parser->release();
+
+        // Dispatch of `verb::unknown` is reserved for websocket.
+        if (request.get().method() == http::verb::unknown)
+        {
+            handler(error::bad_method, size);
+            return;
+        }
     }
 
     const auto code = error::http_to_error_code(ec);
