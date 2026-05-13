@@ -331,8 +331,6 @@ private:
     // body
     void do_body_read(boost_code ec, size_t total,
         const read_state::ptr& in, const count_handler& handler) NOEXCEPT;
-    void handle_body_read(boost_code ec, size_t size, size_t total,
-        const read_state::ptr& in, const count_handler& handler) NOEXCEPT;
     void do_body_write(boost_code ec, size_t total,
         const write_state::ptr& out, const count_handler& handler) NOEXCEPT;
     void do_body_notify(boost_code ec, size_t total,
@@ -378,13 +376,15 @@ private:
         const count_handler& handler) NOEXCEPT;
 
     // body
-    void handle_body_write(boost_code ec, size_t size, size_t total,
+    void handle_body_read(const code& ec, size_t size, size_t total,
+        const read_state::ptr& in, const count_handler& handler) NOEXCEPT;
+    void handle_body_write(const code& ec, size_t size, size_t total,
         const write_state::ptr& out, const count_handler& handler) NOEXCEPT;
-    void handle_body_notify(boost_code ec, size_t size, size_t total,
+    void handle_body_notify(const code& ec, size_t size, size_t total,
         const notify_state::ptr& out, const count_handler& handler) NOEXCEPT;
 
     // http/ws (native/rpc)
-    void handle_http_read(boost_code ec, size_t size,
+    void handle_http_read(const boost_code& ec, size_t size,
         const ref<http::request>& request, const http_parser_ptr& parser,
         const count_handler& handler) NOEXCEPT;
     void handle_http_write(const boost_code& ec, size_t size,

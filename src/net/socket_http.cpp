@@ -59,7 +59,7 @@ void socket::do_http_read(ref<http::flat_buffer> buffer,
 }
 
 // private
-void socket::handle_http_read(boost_code ec, size_t size,
+void socket::handle_http_read(const boost_code& ec, size_t size,
     const ref<http::request>& request, const http_parser_ptr& parser,
     const count_handler& handler) NOEXCEPT
 {
@@ -83,7 +83,10 @@ void socket::handle_http_read(boost_code ec, size_t size,
 
         // Dispatch of `verb::unknown` is reserved for websocket.
         if (request.get().method() == http::verb::unknown)
-            ec = error::bad_method;
+        {
+            handler(error::bad_method, size);
+            return;
+        }
     }
 
     const auto code = error::http_to_error_code(ec);

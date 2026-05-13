@@ -38,7 +38,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 // BODY (read).
 // ----------------------------------------------------------------------------
 // The body_ methods accept any boost::beast-compliant body to read/write a tcp
-// socket. For http read/write use the http_ methods. The rcp_ methods are just
+// socket. For http read/write use the http_ methods. The rpc_ methods are just
 // a specialization of these methods, passing the rpc::body<> types. For simple
 // fixed-size tcp (p2p) use the tcp_ methods, and for simple framed ws use the
 // ws_ methods. The body methods require fixed size or framed read/write. The
@@ -73,12 +73,16 @@ void socket::do_body_read(boost_code ec, size_t total,
     }
 
     // Parse data in the buffer.
-    in->buffer.consume(in->reader.put(in->buffer.data(), ec));
+    const auto read = in->reader.put(in->buffer.data(), ec);
 
-    if (!ec)
+    if (!ec && !is_zero(read))
     {
+        in->buffer.consume(read);
+
         // The json/json-rpc readers do not finalize on finish, instead
         // they return need_more if not complete and success if complete.
+        // For others this assumes websockets, since finish is called
+        // after the first read (full message must be complete).
         in->reader.finish(ec);
 
         if (!ec)
@@ -117,13 +121,13 @@ void socket::do_body_read(boost_code ec, size_t total,
 }
 
 // private
-void socket::handle_body_read(boost_code ec, size_t size, size_t total,
+void socket::handle_body_read(const code& ec, size_t size, size_t total,
     const read_state::ptr& in, const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     total = ceilinged_add(total, size);
-    if (error::asio_is_canceled(ec))
+    if (ec == error::operation_canceled)
     {
         handler(error::channel_stopped, total);
         return;
@@ -137,11 +141,14 @@ void socket::handle_body_read(boost_code ec, size_t size, size_t total,
 
     if (ec)
     {
-        do_body_read(ec, total, in, handler);
+        handler(ec, total);
         return;
     }
 
-    in->buffer.commit(size);
+    // Beast websocket read commits framed message.
+    if (!websocket())
+        in->buffer.commit(size);
+
     do_body_read({}, total, in, handler);
 }
 
@@ -190,13 +197,13 @@ void socket::do_body_write(boost_code ec, size_t total,
 }
 
 // private
-void socket::handle_body_write(boost_code ec, size_t size, size_t total,
+void socket::handle_body_write(const code& ec, size_t size, size_t total,
     const write_state::ptr& out, const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     total = ceilinged_add(total, size);
-    if (error::asio_is_canceled(ec))
+    if (ec == error::operation_canceled)
     {
         handler(error::channel_stopped, total);
         return;
@@ -208,8 +215,14 @@ void socket::handle_body_write(boost_code ec, size_t size, size_t total,
         return;
     }
 
+    if (ec)
+    {
+        handler(ec, total);
+        return;
+    }
+
     // Handle error condition or incomplete message.
-    do_body_write(ec, total, out, handler);
+    do_body_write({}, total, out, handler);
 }
 
 // Body (notify).
@@ -259,13 +272,13 @@ void socket::do_body_notify(boost_code ec, size_t total,
 }
 
 // private
-void socket::handle_body_notify(boost_code ec, size_t size, size_t total,
+void socket::handle_body_notify(const code& ec, size_t size, size_t total,
     const notify_state::ptr& out, const count_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     total = ceilinged_add(total, size);
-    if (error::asio_is_canceled(ec))
+    if (ec == error::operation_canceled)
     {
         handler(error::channel_stopped, total);
         return;
@@ -277,8 +290,14 @@ void socket::handle_body_notify(boost_code ec, size_t size, size_t total,
         return;
     }
 
+    if (ec)
+    {
+        handler(ec, total);
+        return;
+    }
+
     // Handle error condition or incomplete message.
-    do_body_notify(ec, total, out, handler);
+    do_body_notify({}, total, out, handler);
 }
 
 BC_POP_WARNING()
