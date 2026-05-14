@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_NETWORK_MESSAGES_HTTP_FILE_WRITER_HPP
-#define LIBBITCOIN_NETWORK_MESSAGES_HTTP_FILE_WRITER_HPP
+#ifndef LIBBITCOIN_NETWORK_MESSAGES_HTTP_FILE_BODY_HPP
+#define LIBBITCOIN_NETWORK_MESSAGES_HTTP_FILE_BODY_HPP
 
 #include <memory>
 #include <bitcoin/network/define.hpp>
@@ -25,6 +25,7 @@
 namespace libbitcoin {
 namespace network {
 namespace http {
+
 
 /// BOOST_BEAST_FILE_BUFFER_SIZE reduced from 4k to 1k in beast.hpp.
 /// beast_body::writer would eat up 1k in variant so wrap in this custom body.
@@ -42,7 +43,9 @@ struct file_body
         template <bool IsRequest, class Fields>
         explicit writer(http::message_header<IsRequest, Fields>& header,
             beast_body::value_type& value) NOEXCEPT
+            BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
           : writer_(std::make_unique<beast_body::writer>(header, value))
+            BC_POP_WARNING()
         {
         }
 
@@ -77,7 +80,7 @@ struct file_body
         std::unique_ptr<beast_body::writer> writer_;
     };
 
-    static inline uint64_t size(value_type const& body) NOEXCEPT
+    static inline uint64_t size(const value_type& body) NOEXCEPT
     {
         return beast_body::size(body);
     }
