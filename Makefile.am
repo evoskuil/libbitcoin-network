@@ -580,7 +580,7 @@ include_bitcoin_network_messages_HEADERS = \
 include_bitcoin_network_messages_httpdir = ${includedir}/bitcoin/network/messages/http
 include_bitcoin_network_messages_http_HEADERS = \
     include/bitcoin/network/messages/http/fields.hpp \
-    include/bitcoin/network/messages/http/file_writer.hpp \
+    include/bitcoin/network/messages/http/file_body.hpp \
     include/bitcoin/network/messages/http/http.hpp
 
 include_bitcoin_network_messages_http_enumsdir = ${includedir}/bitcoin/network/messages/http/enums

@@ -67,7 +67,7 @@
 #include <bitcoin/network/messages/json_body.hpp>
 #include <bitcoin/network/messages/messages.hpp>
 #include <bitcoin/network/messages/http/fields.hpp>
-#include <bitcoin/network/messages/http/file_writer.hpp>
+#include <bitcoin/network/messages/http/file_body.hpp>
 #include <bitcoin/network/messages/http/http.hpp>
 #include <bitcoin/network/messages/http/enums/magic_numbers.hpp>
 #include <bitcoin/network/messages/http/enums/media_type.hpp>
