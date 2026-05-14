@@ -67,6 +67,7 @@
 #include <bitcoin/network/messages/json_body.hpp>
 #include <bitcoin/network/messages/messages.hpp>
 #include <bitcoin/network/messages/http/fields.hpp>
+#include <bitcoin/network/messages/http/file_writer.hpp>
 #include <bitcoin/network/messages/http/http.hpp>
 #include <bitcoin/network/messages/http/enums/magic_numbers.hpp>
 #include <bitcoin/network/messages/http/enums/media_type.hpp>
@@ -162,7 +163,6 @@
 #include <bitcoin/network/sessions/session_seed.hpp>
 #include <bitcoin/network/sessions/session_server.hpp>
 #include <bitcoin/network/sessions/sessions.hpp>
-#if WITH_SSL
 #include <bitcoin/network/ssl/openssl/conf.h>
 #include <bitcoin/network/ssl/openssl/dh.h>
 #include <bitcoin/network/ssl/openssl/engine.h>
@@ -291,6 +291,5 @@
 #include <bitcoin/network/ssl/wolfssl/wolfcrypt/wc_encrypt.h>
 #include <bitcoin/network/ssl/wolfssl/wolfcrypt/wc_port.h>
 #include <bitcoin/network/ssl/wolfssl/wolfcrypt/wolfmath.h>
-#endif
 
 #endif

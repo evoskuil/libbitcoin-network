@@ -40,19 +40,17 @@ using string_reader = http::string_body::reader;
 using json_reader = http::json_body::reader;
 using body_reader = std::variant
 <
-    std::monostate,
-    empty_reader,
-    data_reader,
-    file_reader,
-    span_reader,
-    buffer_reader,
-    string_reader,
-    json_reader,
-    rpc::reader
+    std::monostate, //     1 byte
+    empty_reader,   //     1 bytes
+    data_reader,    //     8 bytes
+    file_reader,    //     8 bytes
+    span_reader,    //     8 bytes
+    buffer_reader,  //     8 bytes
+    string_reader,  //     8 bytes
+    json_reader,    //   320 bytes!
+    rpc::reader     //   328 bytes!
 >;
 
-// TODO: file_writer is eating 4k stack for each type.
-// BOOST_BEAST_FILE_BUFFER_SIZE set to 1024 in beast.hpp.
 using empty_writer = http::empty_body::writer;
 using data_writer = http::chunk_body::writer;
 using file_writer = http::file_body::writer;
@@ -65,7 +63,7 @@ using body_writer = std::variant
     std::monostate, //     1 byte
     empty_writer,   //     1 byte
     data_writer,    //     8 bytes
-    file_writer,    // 1,040 bytes! (4,112 bytes by default)
+    file_writer,    //     8 bytes
     span_writer,    //     8 bytes
     buffer_writer,  //    16 bytes
     string_writer,  //     8 bytes

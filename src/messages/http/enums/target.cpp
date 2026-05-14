@@ -219,7 +219,7 @@ http::file get_file_body(const std::filesystem::path& path) NOEXCEPT
 
     // http::file::open accepts a "utf-8 encoded path to the file" on win32.
     const auto utf8_path = from_path(path);
-    http::file_body::value_type file{};
+    http::file file{};
 
     try
     {
