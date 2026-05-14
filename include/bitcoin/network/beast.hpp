@@ -52,8 +52,9 @@ namespace http
     using chunk_body = boost::beast::http::vector_body<uint8_t,
         allocator<uint8_t>>;
 
+    // This is wrapped for http_body.
     /// beast::http::file_body
-    using file_body = boost::beast::http::file_body;
+    ////using file_body = boost::beast::http::file_body;
 
     /// beast::http::span_body<uint8_t>
     /// Must cast write span uint8_t* to non-const.
@@ -67,7 +68,7 @@ namespace http
     using string_body = boost::beast::http::string_body;
 
     /// general purpose
-    using file = file_body::value_type;
+    using file = boost::beast::http::file_body::value_type;
     using field = boost::beast::http::field;
     using fields = boost::beast::http::fields;
     using flat_buffer = boost::beast::flat_buffer;

@@ -779,6 +779,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\network\messages\http\fields.hpp">
       <Filter>include\bitcoin\network\messages\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\network\messages\http\file_writer.hpp">
+      <Filter>include\bitcoin\network\messages\http</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\network\messages\http\http.hpp">
       <Filter>include\bitcoin\network\messages\http</Filter>
     </ClInclude>
