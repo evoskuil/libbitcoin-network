@@ -196,7 +196,8 @@ void channel_http::send(response&& response, result_handler&& handler) NOEXCEPT
     BC_ASSERT(stranded());
 
     assign_json_buffer(response);
-    auto message = log_message(response);
+
+    std::string message{ LOG_ONLY(log_message(response)) };
 
     write(std::move(response),
         std::bind(&channel_http::handle_send,
@@ -210,7 +211,7 @@ void channel_http::notify(response&& notification,
     BC_ASSERT(stranded());
     BC_ASSERT(websocket());
 
-    auto message = log_message(notification);
+    std::string message{ LOG_ONLY(log_message(notification)) };
 
     write(std::move(notification),
         std::bind(&channel_http::handle_send,
