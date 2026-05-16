@@ -111,6 +111,7 @@ void body::writer::init(boost_code& ec) NOEXCEPT
     {
         [&] (std::monostate&) NOEXCEPT
         {
+            ec = {};
         },
         [&](auto& write) NOEXCEPT
         {
@@ -132,7 +133,15 @@ body::writer::out_buffer body::writer::get(boost_code& ec) NOEXCEPT
     {
         [&] (std::monostate&) NOEXCEPT
         {
+            ec = {};
             return out_buffer{};
+        },
+        [&](empty_writer&) NOEXCEPT
+        {
+            ec = {};
+
+            // Socket body writer requires non-empty buffer to write empty.
+            return out_buffer{ std::make_pair(asio::const_buffer{}, false) };
         },
         [&](auto& write) NOEXCEPT
         {
