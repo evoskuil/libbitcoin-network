@@ -64,7 +64,7 @@ channel::~channel() NOEXCEPT
 // Start/stop/resume (started/paused upon create).
 // ----------------------------------------------------------------------------
 
-// This should not be called internally (invoked by stop() or async_stop()).
+// This should not be called internally (invoked by stop()).
 void channel::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -163,7 +163,7 @@ void channel::handle_expiration(const code& ec) NOEXCEPT
         return;
     }
 
-    async_stop(error::channel_expired);
+    stop(error::channel_expired);
 }
 
 void channel::stop_inactivity() NOEXCEPT
@@ -202,7 +202,7 @@ void channel::handle_inactivity(const code& ec) NOEXCEPT
         return;
     }
 
-    async_stop(error::channel_inactive);
+    stop(error::channel_inactive);
 }
 
 // Properties.

@@ -52,26 +52,28 @@ void proxy::stop(const code& ec) NOEXCEPT
     if (stopped())
         return;
 
-    // Stop the read loop, stop accepting new work, cancel pending work.
-    socket_->stop();
-
-    // Overruled by stop, set only for consistency.
-    paused_.store(true);
-
-    boost::asio::post(strand(),
-        std::bind(&proxy::stopping, shared_from_this(), ec));
-}
-
-void proxy::async_stop(const code& ec) NOEXCEPT
-{
-    if (stopped())
-        return;
-
-    // Stop the read loop, stop accepting new work, cancel pending work.
-    // Allows for graceful ws/ssl::close, which would hang the threadpool if
-    // attempted within socket::stop(), as it issues a follow-on iocontext job.
-    // A subsequent call to socket::stop() will terminate directly.
-    socket_->lazy_stop();
+    // Client or timer initated stop is async (graceful).
+    // error::channel_stopped is send in various contexts, however the only
+    // ones in which the channel is not stopped are those arising directly from
+    // socket read handlers, resulting in a stop(ec) call. This is interpreted
+    // as client socket cancellation, which along with timer cancellations are
+    // allowed to close gracefully. error::service_stopped will invoke socket
+    // stop() below, which will immediately terminate outstanding lazy_stop().
+    if (ec == error::channel_stopped ||
+        ec == error::channel_expired ||
+        ec == error::channel_inactive)
+    {
+        // Stop the read loop, stop accepting new work, cancel pending work.
+        // Allows for graceful ws/ssl::close, which would hang threadpool if
+        // attempted within socket::stop(), as it issues a follow-on iocontext
+        // job. A subsequent call to socket::stop() will terminate directly.
+        socket_->lazy_stop();
+    }
+    else
+    {
+        // Stop the read loop, stop accepting new work, cancel pending work.
+        socket_->stop();
+    }
 
     // Overruled by stop, set only for consistency.
     paused_.store(true);
@@ -81,7 +83,7 @@ void proxy::async_stop(const code& ec) NOEXCEPT
 }
 
 // protected
-// This should not be called internally (invoked by stop() or async_stop()).
+// This should not be called internally (invoked by stop()).
 void proxy::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
