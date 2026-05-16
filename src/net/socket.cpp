@@ -116,9 +116,7 @@ bool socket::inbound() const NOEXCEPT
 
 bool socket::websocket() const NOEXCEPT
 {
-    BC_ASSERT(stranded());
-    return std::holds_alternative<ws::socket>(socket_) ||
-        std::holds_alternative<ws::ssl::socket>(socket_);
+    return websocket_.load();
 }
 
 const config::address& socket::address() const NOEXCEPT

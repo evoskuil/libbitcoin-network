@@ -173,6 +173,7 @@ code socket::set_websocket(const http::request& request) NOEXCEPT
             sock.accept(request);
         }
 
+        websocket_.store(true);
         return error::upgraded;
     }
     catch (const std::exception& e)
