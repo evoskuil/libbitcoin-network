@@ -52,14 +52,10 @@ void proxy::stop(const code& ec) NOEXCEPT
     if (stopped())
         return;
 
-    // Client or timer initated stop is async (graceful).
-    // error::channel_stopped is send in various contexts, however the only
-    // ones in which the channel is not stopped are those arising directly from
-    // socket read handlers, resulting in a stop(ec) call. This is interpreted
-    // as client socket cancellation, which along with timer cancellations are
-    // allowed to close gracefully. error::service_stopped will invoke socket
-    // stop() below, which will immediately terminate outstanding lazy_stop().
-    if (ec == error::channel_stopped ||
+    // Client websocket or timer initated (when ws) stop is async (graceful).
+    // error::service_stopped will invoke socket stop() below, which will
+    // immediately terminate outstanding lazy_stop().
+    if (ec == error::websocket_closed ||
         ec == error::channel_expired ||
         ec == error::channel_inactive)
     {
