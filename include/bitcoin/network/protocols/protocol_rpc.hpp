@@ -46,6 +46,7 @@ protected:
     {
     }
 
+    /// Dispatch subscription method.
     DECLARE_SUBSCRIBE_CHANNEL()
 
     /// Senders with default completion (requires strand).

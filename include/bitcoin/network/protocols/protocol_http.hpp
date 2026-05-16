@@ -54,7 +54,11 @@ protected:
 
     /// Forwards to channel::send.
     DECLARE_SEND()
+
+    /// Forwards to channel::notify.
     DECLARE_NOTIFY()
+
+    /// Dispatch subscription method.
     DECLARE_SUBSCRIBE_CHANNEL()
 
     /// Message handlers by http method.
