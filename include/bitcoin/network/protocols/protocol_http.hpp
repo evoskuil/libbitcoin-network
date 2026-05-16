@@ -122,6 +122,7 @@ protected:
 
     /// Properties.
     uint16_t default_port() const NOEXCEPT;
+    bool websocket() const NOEXCEPT;
 
 private:
     // This is mostly thread safe, and used in a thread safe manner.

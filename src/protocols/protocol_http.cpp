@@ -439,6 +439,11 @@ uint16_t protocol_http::default_port() const NOEXCEPT
     return default_port_;
 }
 
+bool protocol_http::websocket() const NOEXCEPT
+{
+    return channel_->websocket();
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 BC_POP_WARNING()
