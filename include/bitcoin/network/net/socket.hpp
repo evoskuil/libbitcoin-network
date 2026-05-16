@@ -194,7 +194,7 @@ public:
     /// The socket upgrades to its secure configuration upon connect.
     virtual bool secure() const NOEXCEPT;
 
-    /// The socket was upgraded to a websocket (requires strand).
+    /// The socket was upgraded to a websocket.
     virtual bool websocket() const NOEXCEPT;
 
     /// Get the address of the outgoing endpoint passed via construct, or the
@@ -406,6 +406,7 @@ protected:
     asio::context& service_;
     const context& context_;
     std::atomic_bool stopped_{};
+    std::atomic_bool websocket_{};
 
     // These are protected by strand (see also handle_accept).
     config::address address_;

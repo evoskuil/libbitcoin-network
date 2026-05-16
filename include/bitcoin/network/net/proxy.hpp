@@ -97,7 +97,7 @@ public:
     /// Connection is currently secured (TLS or comparable for socket type).
     bool secure() const NOEXCEPT;
 
-    /// The socket was upgraded to a websocket (requires strand).
+    /// The socket was upgraded to a websocket.
     bool websocket() const NOEXCEPT;
 
     /// The total number of bytes queued/sent to the remote endpoint.
