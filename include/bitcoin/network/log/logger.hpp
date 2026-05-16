@@ -112,8 +112,8 @@ public:
 
     /// If stopped, handler is invoked with error::subscriber_stopped/defaults
     /// and dropped. Otherwise it is held until stop/drop. False if failed.
-    void subscribe_messages(message_notifier&& handler) NOEXCEPT;
-    void subscribe_events(event_notifier&& handler) NOEXCEPT;
+    void subscribe_messages(message_notifier&& handler) const NOEXCEPT;
+    void subscribe_events(event_notifier&& handler) const NOEXCEPT;
 
     /// Stop subscribers/pool with final message/empty posted to subscribers.
     void stop(const code& ec, const std::string& message, uint8_t level) NOEXCEPT;
@@ -127,11 +127,12 @@ protected:
         std::string&& message) const NOEXCEPT;
 
 private:
-    void do_subscribe_messages(const message_notifier& handler) NOEXCEPT;
+    void do_subscribe_messages(
+        const message_notifier& handler) const NOEXCEPT;
     void do_notify_message(const code& ec, uint8_t level, time_t zulu,
         const std::string& message) const NOEXCEPT;
 
-    void do_subscribe_events(const event_notifier& handler) NOEXCEPT;
+    void do_subscribe_events(const event_notifier& handler) const NOEXCEPT;
     void do_notify_event(uint8_t event, uint64_t value,
         const time& point) const NOEXCEPT;
 
@@ -144,7 +145,7 @@ private:
     // These are thread safe.
     std::atomic_bool stopped_{ false };
     BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    asio::strand strand_{ pool_.service().get_executor() };
+    mutable asio::strand strand_{ pool_.service().get_executor() };
     BC_POP_WARNING()
 
     // These are protected by strand.

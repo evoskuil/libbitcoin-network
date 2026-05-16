@@ -119,7 +119,7 @@ void logger::do_notify_message(const code& ec, uint8_t level, time_t zulu,
     message_subscriber_.notify(ec, level, zulu, message);
 }
 
-void logger::subscribe_messages(message_notifier&& handler) NOEXCEPT
+void logger::subscribe_messages(message_notifier&& handler) const NOEXCEPT
 {
     if (stopped())
     {
@@ -133,7 +133,8 @@ void logger::subscribe_messages(message_notifier&& handler) NOEXCEPT
 }
 
 // private
-void logger::do_subscribe_messages(const message_notifier& handler) NOEXCEPT
+void logger::do_subscribe_messages(
+    const message_notifier& handler) const NOEXCEPT
 {
     BC_ASSERT(stranded());
     message_subscriber_.subscribe(move_copy(handler));
@@ -157,7 +158,7 @@ void logger::do_notify_event(uint8_t event_, uint64_t value,
     event_subscriber_.notify(error::success, event_, value, point);
 }
 
-void logger::subscribe_events(event_notifier&& handler) NOEXCEPT
+void logger::subscribe_events(event_notifier&& handler) const NOEXCEPT
 {
     if (stopped())
     {
@@ -171,7 +172,7 @@ void logger::subscribe_events(event_notifier&& handler) NOEXCEPT
 }
 
 // private
-void logger::do_subscribe_events(const event_notifier& handler) NOEXCEPT
+void logger::do_subscribe_events(const event_notifier& handler) const NOEXCEPT
 {
     BC_ASSERT(stranded());
     event_subscriber_.subscribe(move_copy(handler));
