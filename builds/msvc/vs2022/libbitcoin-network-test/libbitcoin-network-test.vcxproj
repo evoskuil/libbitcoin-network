@@ -142,6 +142,8 @@
     <ClCompile Include="..\..\..\..\test\config\endpoint.cpp" />
     <ClCompile Include="..\..\..\..\test\config\utilities.cpp" />
     <ClCompile Include="..\..\..\..\test\error.cpp" />
+    <ClCompile Include="..\..\..\..\test\functional\peer.cpp" />
+    <ClCompile Include="..\..\..\..\test\functional\peer_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\log\timer.cpp" />
     <ClCompile Include="..\..\..\..\test\log\tracker.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
@@ -335,6 +337,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\functional\peer_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\ssl\wolfssl\examples\client\client.h" />
     <ClInclude Include="..\..\..\..\test\ssl\wolfssl\examples\server\server.h" />
     <ClInclude Include="..\..\..\..\test\ssl\wolfssl\tests\api\api.h" />

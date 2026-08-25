@@ -718,6 +718,8 @@ test_libbitcoin_network_test_SOURCES = \
     ${srcdir}/../../test/config/credential.cpp \
     ${srcdir}/../../test/config/endpoint.cpp \
     ${srcdir}/../../test/config/utilities.cpp \
+    ${srcdir}/../../test/functional/peer.cpp \
+    ${srcdir}/../../test/functional/peer_setup_fixture.cpp \
     ${srcdir}/../../test/log/timer.cpp \
     ${srcdir}/../../test/log/tracker.cpp \
     ${srcdir}/../../test/messages/http_body_reader.cpp \
