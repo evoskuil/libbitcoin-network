@@ -210,7 +210,6 @@ BOOST_AUTO_TEST_CASE(privacy_stream__detected_v1__wrong_magic__false)
 BOOST_AUTO_TEST_CASE(privacy_stream__detected_v1__random_key__false)
 {
     // An ellswift key cannot match the version prefix.
-    const v2_context configuration{ mainnet };
     const data_chunk prefix(v2_stream::detection_size, 0x42);
 
     BOOST_REQUIRE(!v2_stream::detected_v1(prefix, mainnet));
