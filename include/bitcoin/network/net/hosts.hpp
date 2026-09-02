@@ -66,6 +66,9 @@ public:
     /// Count of pooled addresses.
     virtual size_t count() const NOEXCEPT;
 
+    /// Count of pooled addresses by address type.
+    virtual config::address_counts counts() const NOEXCEPT;
+
     /// Count of reserved (currently connected) addresses.
     virtual size_t reserved() const NOEXCEPT;
 
@@ -126,8 +129,11 @@ private:
 
     // Inlines local to translation unit.
     inline messages::peer::address_item::cptr pop() NOEXCEPT;
+    inline void push(const messages::peer::address_item& host) NOEXCEPT;
     inline void push(const std::string& line) NOEXCEPT;
     inline bool is_reserved(const config::endpoint& host) const NOEXCEPT;
+    inline void increment(const messages::peer::ip_address& ip) NOEXCEPT;
+    inline void decrement(const messages::peer::ip_address& ip) NOEXCEPT;
 
     void do_take(const address_item_handler& handler) NOEXCEPT;
     void do_restore(const address_item_cptr& host,
@@ -141,6 +147,7 @@ private:
     const uint64_t required_;
     std::atomic<size_t> hosts_count_{};
     std::atomic<size_t> endpoints_count_{};
+    std::array<std::atomic<size_t>, config::address_types> counts_{};
 
     // These are not thread safe.
     buffer buffer_;

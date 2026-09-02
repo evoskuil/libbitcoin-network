@@ -274,6 +274,7 @@ include_bitcoin_network_configdir = \
 
 include_bitcoin_network_config_HEADERS = \
     ${srcdir}/../../include/bitcoin/network/config/address.hpp \
+    ${srcdir}/../../include/bitcoin/network/config/address_type.hpp \
     ${srcdir}/../../include/bitcoin/network/config/authority.hpp \
     ${srcdir}/../../include/bitcoin/network/config/config.hpp \
     ${srcdir}/../../include/bitcoin/network/config/credential.hpp \
@@ -714,6 +715,7 @@ test_libbitcoin_network_test_SOURCES = \
     ${srcdir}/../../test/channels/channel_peer.cpp \
     ${srcdir}/../../test/channels/channel_rpc.cpp \
     ${srcdir}/../../test/config/address.cpp \
+    ${srcdir}/../../test/config/address_type.cpp \
     ${srcdir}/../../test/config/authority.cpp \
     ${srcdir}/../../test/config/credential.cpp \
     ${srcdir}/../../test/config/endpoint.cpp \
