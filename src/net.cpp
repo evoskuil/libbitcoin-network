@@ -532,12 +532,25 @@ void net::do_connect_handled(const config::endpoint& endpoint,
         handler(error::service_stopped, nullptr);
 }
 
+// P2P Administration.
+// ----------------------------------------------------------------------------
+
+void net::dump_addresses(address_handler&& handler) NOEXCEPT
+{
+    fetch(std::move(handler));
+}
+
 // P2P Properties.
 // ----------------------------------------------------------------------------
 
 size_t net::address_count() const NOEXCEPT
 {
     return hosts_.count();
+}
+
+config::address_counts net::address_counts() const NOEXCEPT
+{
+    return hosts_.counts();
 }
 
 size_t net::reserved_count() const NOEXCEPT

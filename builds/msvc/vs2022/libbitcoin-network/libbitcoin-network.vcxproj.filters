@@ -722,6 +722,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\network\config\address.hpp">
       <Filter>include\bitcoin\network\config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\network\config\address_type.hpp">
+      <Filter>include\bitcoin\network\config</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\network\config\authority.hpp">
       <Filter>include\bitcoin\network\config</Filter>
     </ClInclude>

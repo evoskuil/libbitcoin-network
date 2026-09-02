@@ -148,11 +148,20 @@ public:
     virtual void connect(const config::endpoint& endpoint,
         channel_notifier&& handler) NOEXCEPT;
 
+    /// P2P Administration.
+    /// -----------------------------------------------------------------------
+
+    /// Get a randomized subset of pooled addresses.
+    virtual void dump_addresses(address_handler&& handler) NOEXCEPT;
+
     /// P2P Properties.
     /// -----------------------------------------------------------------------
 
     /// Get the number of addresses.
     virtual size_t address_count() const NOEXCEPT;
+
+    /// Get the number of addresses by address type.
+    virtual config::address_counts address_counts() const NOEXCEPT;
 
     /// Get the number of address reservations.
     virtual size_t reserved_count() const NOEXCEPT;

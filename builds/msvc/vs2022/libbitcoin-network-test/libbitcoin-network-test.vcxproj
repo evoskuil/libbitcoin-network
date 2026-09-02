@@ -137,6 +137,7 @@
     <ClCompile Include="..\..\..\..\test\config\address.cpp">
       <ObjectFileName>$(IntDir)test_config_address.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\config\address_type.cpp" />
     <ClCompile Include="..\..\..\..\test\config\authority.cpp" />
     <ClCompile Include="..\..\..\..\test\config\credential.cpp" />
     <ClCompile Include="..\..\..\..\test\config\endpoint.cpp" />
