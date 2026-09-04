@@ -306,7 +306,7 @@ struct BCT_API settings
     uint16_t address_lower{ 5 };
     uint32_t protocol_maximum{ messages::peer::level::maximum_protocol };
     uint32_t protocol_minimum{ messages::peer::level::minimum_protocol };
-    uint64_t invalid_services{ 176 };
+    uint64_t invalid_services{ 0b0001'0000'0000'0000'0000'0000'1011'0000 };
     bool enable_address{ false };
     bool enable_address_v2{ false };
     bool enable_witness_tx{ false };
