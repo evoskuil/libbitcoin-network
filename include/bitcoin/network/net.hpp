@@ -100,7 +100,7 @@ public:
     virtual void suspend(const code& ec) NOEXCEPT;
 
     /// Resume all P2P connection.
-    virtual void resume() NOEXCEPT;
+    virtual bool resume() NOEXCEPT;
 
     /// Properties.
     /// -----------------------------------------------------------------------

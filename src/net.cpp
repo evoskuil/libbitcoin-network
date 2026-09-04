@@ -311,10 +311,11 @@ void net::suspend(const code&) NOEXCEPT
     suspend_connectors();
 }
 
-void net::resume() NOEXCEPT
+bool net::resume() NOEXCEPT
 {
     resume_acceptors();
     resume_connectors();
+    return true;
 }
 
 bool net::suspended() const NOEXCEPT
