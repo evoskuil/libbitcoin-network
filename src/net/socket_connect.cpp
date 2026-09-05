@@ -45,8 +45,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 void socket::accept(asio::acceptor& acceptor,
     result_handler&& handler) NOEXCEPT
 {
-    BC_ASSERT_MSG(!get_base().is_open(),
-        "accept on open socket");
+    BC_ASSERT_MSG(!get_base().is_open(), "accept on open socket");
     try
     {
         // Dispatches on the acceptor's strand (which should be network).
@@ -113,8 +112,7 @@ void socket::do_connect(const asio::endpoints& range,
 {
     BC_ASSERT(stranded());
     BC_ASSERT_MSG(!websocket(), "socket is upgraded");
-    BC_ASSERT_MSG(!get_base().is_open(),
-        "connect on open socket");
+    BC_ASSERT_MSG(!get_base().is_open(), "connect on open socket");
 
     try
     {
