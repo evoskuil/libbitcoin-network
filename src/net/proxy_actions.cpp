@@ -40,11 +40,27 @@ using namespace std::placeholders;
 
 void proxy::wait(result_handler&& handler) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
+    if (canceler_)
+    {
+        canceler_ = {};
+        return;
+    }
+
     socket_->wait(std::move(handler));
 }
 
 void proxy::cancel(result_handler&& handler) NOEXCEPT
 {
+    BC_ASSERT(stranded());
+
+    if (writing_)
+    {
+        canceler_ = std::move(handler);
+        return;
+    }
+
     socket_->cancel(std::move(handler));
 }
 
